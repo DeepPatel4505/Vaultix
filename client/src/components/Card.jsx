@@ -1,7 +1,5 @@
 const formatDate = (value) => {
-    if (!value) {
-        return "Unknown";
-    }
+    if (!value) return "Unknown";
 
     const date = new Date(value);
 
@@ -11,42 +9,147 @@ const formatDate = (value) => {
 
     return new Intl.DateTimeFormat(undefined, {
         dateStyle: "medium",
-        timeStyle: "short",
     }).format(date);
+};
+
+const getFileType = (fileName = "") => {
+    const extension = fileName.split(".").pop()?.toUpperCase();
+
+    if (!extension) return "FILE";
+
+    return extension.length > 4 ? "FILE" : extension;
 };
 
 const Card = ({ fileMeta }) => {
     const sizeInMb = Number(fileMeta?.size ?? 0) / (1024 * 1024);
 
     return (
-        <article className="border border-[var(--border)] px-5 py-4 transition-colors duration-200 hover:border-[var(--border-hover)]">
-            <div className="flex items-start justify-between gap-4 border-b border-[var(--border)] pb-4">
-                <div className="min-w-0 space-y-3">
-                    <span className="inline-flex max-w-full items-center border border-[var(--border)] px-2 py-1 text-[10px] font-medium uppercase tracking-[0.28em] text-[var(--foreground-muted)]">
-                        File
-                    </span>
-                    <h2 className="truncate text-lg font-medium text-[var(--foreground)]">
-                        {fileMeta?.originalFileName ?? "Untitled file"}
+        <article
+            className="
+            group
+            relative
+            overflow-hidden
+            rounded-sm
+            border
+            border-(--border)
+            bg-(--surface)
+            transition-all
+            duration-300
+            hover:-translate-y-1
+            hover:border-(--surface-hover)
+            hover:bg-(--surface-hover)
+            hover:shadow-(--shadow-md)
+        "
+        >
+            <div className="p-5">
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                    <h2
+                        className="
+                        line-clamp-2
+                        text-lg
+                        font-semibold
+                        leading-7
+                        text-(--foreground)
+                    "
+                    >
+                        {fileMeta?.originalFileName ?? "Untitled File"}
                     </h2>
-                </div>
+                    <div
+                        className="
+                    w-fit
+                    py-1
+                    px-3
+                    rounded-lg
+                    bg-(--background-secondary)
+                    border
+                    border-(--border)
+                    flex
+                    items-center
+                    justify-center
+                "
+                    >
+                        <span
+                            className="
+                        font-mono
+                        text-xs
+                        tracking-wider
+                        text-(--primary)
+                    "
+                        >
+                            {getFileType(fileMeta?.originalFileName)}
+                        </span>
+                    </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <span
+                            className="
+                            rounded-full
+                            bg-(--background-secondary)
+                            px-3
+                            py-1
+                            text-xs
+                            font-medium
+                            text-(--foreground-secondary)
+                        "
+                        >
+                            {sizeInMb.toFixed(2)} MB
+                        </span>
 
-                <div className="text-xs font-medium text-[var(--foreground-secondary)]">
-                    {sizeInMb.toFixed(2)} MB
+                        <span
+                            className="
+                            rounded-full
+                            bg-(--background-secondary)
+                            px-3
+                            py-1
+                            text-xs
+                            font-medium
+                            text-(--primary)
+                        "
+                        >
+                            ↓ {fileMeta?.downloadCount ?? 0}
+                        </span>
+                    </div>
+                </div>
+                <div>
+                    {/* Download Button  */}
+                    <button
+                        className="
+                        inline-flex
+                        items-center
+                        justify-center
+                        rounded-md
+                        bg-(--primary)
+                        px-4
+                        py-2
+                        text-sm
+                        font-medium
+                        text-(--primary-foreground)
+                        hover:bg-(--primary-hover)
+                    "
+                    >
+                        Download
+                    </button>
+                </div>
+                <div
+                    className="
+                    mt-6
+                    border-t
+                    border-(--border)
+                    pt-4
+                "
+                >
+                    <p
+                        className="
+                        mt-1
+                        text-sm
+                        text-(--foreground-secondary)
+                    "
+                    >
+                        {formatDate(fileMeta?.uploadedAt)}
+                    </p>
                 </div>
             </div>
-
-            <dl className="mt-4 grid gap-3 text-sm text-[var(--foreground-secondary)]">
-                <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] pb-3">
-                    <dt className="text-[var(--foreground-muted)]">Uploaded</dt>
-                    <dd className="text-right text-[var(--foreground)]">{formatDate(fileMeta?.uploadedAt)}</dd>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                    <dt className="text-[var(--foreground-muted)]">Downloads</dt>
-                    <dd className="text-right font-medium text-[var(--foreground)]">
-                        {fileMeta?.downloadCount ?? 0}
-                    </dd>
-                </div>
-            </dl>
         </article>
     );
 };
