@@ -10,6 +10,17 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")
     )
 );
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
 
 //Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -26,6 +37,7 @@ if (app.Environment.IsDevelopment())
 
     app.UseSwaggerUI();
 }
+app.UseCors("AllowFrontend");
 
 // Middleware - this will redirect HTTP requests to HTTPS
 app.UseHttpsRedirection();

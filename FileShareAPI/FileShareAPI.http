@@ -1,0 +1,14 @@
+@FileShareAPI_HostAddress = http://localhost:5279/api
+
+GET {{FileShareAPI_HostAddress}}/file/test
+Accept: application/json
+
+###
+
+GET {{FileShareAPI_HostAddress}}/file
+Accept: application/json
+
+###
+
+GET {{FileShareAPI_HostAddress}}/file/93ee6671-5d73-46a5-8d34-1ab0ae7a4650
+Accept: application/json
