@@ -85,7 +85,7 @@ public class FileController : ControllerBase
         return Ok(filedata);
     }
 
-    [HttpGet("/download/{id}")]
+    [HttpGet("download/{id}")]
     public async Task<ActionResult> DownloadFile(Guid id)
     {
         var file = await _db.Files.FindAsync(id);

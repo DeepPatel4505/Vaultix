@@ -27,6 +27,37 @@ const FilesPage = () => {
         fetchFilesMeta();
     }, []);
 
+    const onDownload = async (id, fileName, mimeType) => {
+        try {
+            setError("");
+
+            const response = await api.get(`/file/download/${id}`, {
+                responseType: "blob",
+            });
+
+            const blob = new Blob([response.data]);
+
+            const url = window.URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = fileName;
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            link.remove();
+
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Download failed:", error);
+
+            setError("Unable to download file.");
+        }
+    };
+
     return (
         <main className="min-h-screen bg-(--background) text-(--foreground)">
             <section className="mx-auto max-w-7xl px-6 py-12">
@@ -84,7 +115,7 @@ const FilesPage = () => {
                             flex
                             items-center
                             gap-3
-                            rounded-(--radius-lg)
+                            rounded-lg
                             border
                             border-(--border)
                             bg-(--surface)
@@ -131,7 +162,7 @@ const FilesPage = () => {
                     <div
                         className="
                         mb-8
-                        rounded-(--radius-md)
+                        rounded-md
                         border
                         border-(--destructive)
                         bg-(--surface)
@@ -161,7 +192,7 @@ const FilesPage = () => {
                                 className="
                                 animate-pulse
                                 overflow-hidden
-                                rounded-(--radius-lg)
+                                rounded-lg
                                 border
                                 border-(--border)
                                 bg-(--surface)
@@ -170,7 +201,7 @@ const FilesPage = () => {
                                 <div className="h-1 bg-(--primary)" />
 
                                 <div className="p-5">
-                                    <div className="mb-5 h-28 rounded-(--radius-md) bg-(--background-secondary)" />
+                                    <div className="mb-5 h-28 rounded-md bg-(--background-secondary)" />
 
                                     <div className="space-y-3">
                                         <div className="h-4 rounded bg-(--background-secondary)" />
@@ -196,13 +227,17 @@ const FilesPage = () => {
                     "
                     >
                         {filesMeta.map((fileMeta) => (
-                            <Card key={fileMeta.id} fileMeta={fileMeta} />
+                            <Card
+                                key={fileMeta.id}
+                                fileMeta={fileMeta}
+                                onDownload={onDownload}
+                            />
                         ))}
                     </div>
                 ) : (
                     <div
                         className="
-                        rounded-(--radius-lg)
+                        rounded-lg
                         border
                         border-dashed
                         border-(--border)

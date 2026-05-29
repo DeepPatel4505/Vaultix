@@ -20,8 +20,12 @@ const getFileType = (fileName = "") => {
     return extension.length > 4 ? "FILE" : extension;
 };
 
-const Card = ({ fileMeta }) => {
+const Card = ({ fileMeta , onDownload }) => {
     const sizeInMb = Number(fileMeta?.size ?? 0) / (1024 * 1024);
+
+    const handleDownload = () => {
+        onDownload(fileMeta?.id, fileMeta?.originalFileName, fileMeta?.mimeType);
+    };
 
     return (
         <article
@@ -35,7 +39,6 @@ const Card = ({ fileMeta }) => {
             bg-(--surface)
             transition-all
             duration-300
-            hover:-translate-y-1
             hover:border-(--surface-hover)
             hover:bg-(--surface-hover)
             hover:shadow-(--shadow-md)
@@ -115,10 +118,12 @@ const Card = ({ fileMeta }) => {
                     {/* Download Button  */}
                     <button
                         className="
+                        mt-5
+                        w-full
                         inline-flex
                         items-center
                         justify-center
-                        rounded-md
+                        rounded-sm
                         bg-(--primary)
                         px-4
                         py-2
@@ -126,7 +131,11 @@ const Card = ({ fileMeta }) => {
                         font-medium
                         text-(--primary-foreground)
                         hover:bg-(--primary-hover)
+                        hover:scale-[1.05]
+                        transition-all
+                        duration-300
                     "
+                    onClick={handleDownload}
                     >
                         Download
                     </button>
