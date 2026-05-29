@@ -106,9 +106,10 @@ public class FileController : ControllerBase
         }
 
         file.DownloadCount++;
+        Console.WriteLine($"File {file.OriginalFileName} has been downloaded {file.DownloadCount} times.");
 
         await _db.SaveChangesAsync();
-
+        Response.Headers.CacheControl = "no-store";
         return PhysicalFile(
             fullPath,
             file.ContentType,
