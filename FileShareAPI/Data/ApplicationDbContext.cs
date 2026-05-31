@@ -9,4 +9,5 @@ public class ApplicationDbContext : DbContext
         : base(options){}
 
     public DbSet<FileRecord> Files => Set<FileRecord>();
+    public DbSet<User> Users => Set<User>();
 }
