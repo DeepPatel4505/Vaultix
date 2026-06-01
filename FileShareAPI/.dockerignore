@@ -1,0 +1,7 @@
+bin/
+obj/
+uploads/
+Storage/uploads/
+.git
+.gitignore
+.vs

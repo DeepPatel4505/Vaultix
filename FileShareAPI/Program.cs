@@ -76,7 +76,12 @@ builder.Services.AddCors(options =>
         });
 });
 builder.Services.AddScoped<IFileService, FileService>();
+var port = Environment.GetEnvironmentVariable("PORT");
 
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://*:{port}");
+}
 // Build the application - this will create an instance of the web application with the configured services and middleware
 var app = builder.Build();
 
