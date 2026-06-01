@@ -13,7 +13,6 @@ const FilesPage = () => {
                 setError("");
 
                 const response = await api.get("/file");
-                console.log(response.data);
                 setFilesMeta(response.data);
             } catch (error) {
                 console.error(error);

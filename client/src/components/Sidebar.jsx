@@ -13,7 +13,6 @@ const Sidebar = () => {
     const fetchTotalFiles = async () => {
         try {
             const response = await api.get("/file");
-            console.log("Total files response:", response.data);
             setTotalFiles(response.data.length);
         } catch (error) {
             console.error("Failed to fetch total files:", error);
