@@ -7,49 +7,31 @@
   <img src="https://img.shields.io/badge/PostgreSQL-Database-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
 </p>
 
-A small but complete file sharing app built with an ASP.NET Core API and a React + Vite frontend. It lets you upload files, browse them in a clean UI, download them back, and keep track of how many times each file has been downloaded.
+A small, practical file-sharing app with an ASP.NET Core API backend and a React + Vite frontend. Upload files, browse metadata, download files, and track download counts.
 
-## What it does
-
+**What it does**
 - Upload files through the API and store them on disk.
-- Save metadata in PostgreSQL with Entity Framework Core.
-- Show file cards in the frontend with filename, type, size, upload date, and download count.
-- Download or delete files through the API.
-- Keep the client and server separated for a simple, modern dev workflow.
+- Persist file metadata in PostgreSQL using Entity Framework Core.
+- Present a simple frontend with file cards, metadata, and download/delete actions.
 
-## Stack
-
+**Stack**
 - Backend: ASP.NET Core Web API, Entity Framework Core, PostgreSQL, Swagger
 - Frontend: React 19, Vite, Axios, Tailwind CSS
-- Storage: Local filesystem for uploaded files
+- Storage: Local filesystem for uploaded files (backend `Storage/uploads/`)
 
-## Project Layout
+**Project layout**
 
 ```text
 FileShareSystem/
-├─ FileShareAPI/        # ASP.NET Core backend
+├─ FileShareAPI/        # ASP.NET Core backend (controllers, services, EF migrations)
 └─ client/              # React + Vite frontend
 ```
 
-## Key Features
+**Quick Start**
 
-- Upload files and persist metadata in the database.
-- View a list of uploaded files from the frontend.
-- Track download counts per file.
-- Delete files from both the database and storage folder.
-- Use Swagger during development to test the API quickly.
+Prerequisites: `.NET 10 SDK`, `Node.js 18+`, `PostgreSQL 15+`.
 
-## Requirements
-
-- .NET 10 SDK
-- Node.js 18+ or newer
-- PostgreSQL 15+ or compatible
-
-## Getting Started
-
-### 1) Backend
-
-Open the backend folder and restore the API:
+Backend (API):
 
 ```bash
 cd FileShareAPI
@@ -58,11 +40,7 @@ dotnet ef database update
 dotnet run
 ```
 
-The API exposes Swagger in development and uses the connection string in `appsettings.Development.json`.
-
-### 2) Frontend
-
-Open the client folder, install dependencies, and start Vite:
+Frontend (client):
 
 ```bash
 cd client
@@ -70,46 +48,81 @@ npm install
 npm run dev
 ```
 
-### 3) Configure the client
-
-The frontend reads the API base URL from `VITE_BACKEND_URL`.
-
-Create a local env file inside `client/`:
+Configure the frontend base URL by creating `client/.env` with:
 
 ```env
 VITE_BACKEND_URL=https://localhost:7261
 ```
 
-A sample file is available at [`client/.env.example`](client/.env.example).
+See `client/.env.example` for an example.
 
-## API Endpoints
+**API (important endpoints)**
+- `GET /api/file/test` — health check
+- `POST /api/file` — upload a file (multipart/form-data)
+- `GET /api/file` — list files (metadata)
+- `GET /api/file/{id}` — get file record
+- `GET /download/{id}` — download stored file
+- `DELETE /api/file/{id}` — delete file and record
 
-Base route: `/api/file`
+**Architecture & File UML**
 
-- `GET /api/file/test` - quick health check
-- `POST /api/file` - upload a file
-- `GET /api/file` - list all uploaded files
-- `GET /api/file/{id}` - get one file record
-- `GET /download/{id}` - download the stored file
-- `DELETE /api/file/{id}` - remove a file record and its file on disk
+Below is a compact view of the repository and a small class diagram showing core domain models. Use these to quickly reason about where code lives and what the main entities are.
 
-## How it looks
+```mermaid
+%% Project file tree
+flowchart TB
+  A[FileShareSystem] --> B[FileShareAPI]
+  A --> C[client]
+  B --> B1[Controllers]
+  B --> B2[Services]
+  B --> B3[Data]
+  B --> B4[Models]
+  B --> B5[DTOs]
+```
 
-The UI is intentionally minimal and clean: file cards, metadata at a glance, and a layout that keeps the focus on the content instead of clutter.
+```mermaid
+classDiagram
+  class FileRecord {
+    +Guid Id
+    +string FileName
+    +string ContentType
+    +long Size
+    +DateTime UploadDate
+    +int DownloadCount
+    +string StorageKey
+  }
+  class User {
+    +Guid Id
+    +string Username
+    +string Email
+    +string PasswordHash
+  }
+  FileRecord --> "0..1" User : owner
 
-## Notes
+  %% Services
+  class IFileService
+  class IFileStorage
+  IFileService ..> FileRecord
+  IFileStorage ..> FileRecord
 
-- Uploaded files are stored in the backend `uploads/` folder.
-- The backend enables CORS for frontend access during development.
-- If your local HTTPS port differs, update `VITE_BACKEND_URL` accordingly.
+```
 
-## Future Ideas
+Notes:
+- `StorageKey` is the filename/path used by the storage provider (`LocalFileStorage` by default).
+- The codebase keeps controllers thin; business logic lives in `Services/` and persistence in `Data/ApplicationDbContext.cs`.
 
-- Add file preview support.
-- Add auth and per-user file libraries.
-- Add drag-and-drop upload in the client.
-- Add search, sorting, and filters for the file list.
+**Migrations & Database**
+- Migrations live under `FileShareAPI/Migrations/`. Run `dotnet ef database update` to apply them.
+- The default connection is configured in `appsettings.Development.json`.
+
+**Development tips**
+- Use Swagger (when running the API in Development) to exercise endpoints quickly: `https://localhost:<port>/swagger`.
+- If HTTPS ports differ between backend and frontend, update `VITE_BACKEND_URL`.
+
+**Where to look first (recommended files)**
+- Backend: `FileShareAPI/Controllers/FileController.cs`, `FileShareAPI/Services/FileSevice.cs`, `FileShareAPI/Services/LocalFileStorage.cs`
+- Frontend: `client/src/pages/FilesPage.jsx`, `client/src/lib/api.js`, `client/src/components/Card.jsx`
 
 ---
 
-Made with ASP.NET Core, React, and a lot of practical file-moving energy.
+If you'd like, I can also: add a PNG export of the UML, expand the architecture section with sequence diagrams, or update `client/.env.example` and a `README.client.md` for developer onboarding. Which would you prefer next?
