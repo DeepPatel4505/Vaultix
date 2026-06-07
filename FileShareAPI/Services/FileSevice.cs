@@ -2,41 +2,26 @@ using FileShareAPI.Data;
 using FileShareAPI.Dtos;
 using FileShareAPI.Models;
 using Microsoft.EntityFrameworkCore;
-using System.IO;
+
 
 namespace FileShareAPI.Services;
 
-public class FileService(ApplicationDbContext db) : IFileService
+public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IFileService
 {
     private readonly ApplicationDbContext _db = db;
+    private readonly IFileStorage _fileStorage = fileStorage;
 
     public async Task<FileResponseDto> UploadAsync(IFormFile file, Guid userId)
     {
-        var uploadFolder = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "Storage/uploads"
-        );
-
-        Directory.CreateDirectory(uploadFolder);
-
-        var storageFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-
-        var fullPath = Path.Combine(
-            uploadFolder,
-            storageFileName
-        );
-
-        using (var stream = new FileStream(fullPath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
+        var storedFileName = await _fileStorage.UploadAsync(file);
 
         var fileRecord = new FileRecord
         {
             Id = Guid.NewGuid(),
             UserId = userId,
             OriginalFileName = file.FileName,
-            StoredFileName = storageFileName,
+            StorageProvider = StorageProvider.local,
+            StorageKey = storedFileName.StorageKey,
             ContentType = file.ContentType,
             Size = file.Length,
         };
@@ -65,34 +50,9 @@ public class FileService(ApplicationDbContext db) : IFileService
         ))];
     }
 
-    public async Task DeleteFileAsync(Guid id, Guid userId)
+    public async Task<FileResponseDto?> GetFileAsync(Guid fileId, Guid userId)
     {
-        var fileRecord = await _db.Files.FirstOrDefaultAsync(file => file.Id == id && file.UserId == userId);
-
-        if (fileRecord == null)
-        {
-            throw new FileNotFoundException();
-        }
-
-        var fullPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "Storage/uploads",
-            fileRecord.StoredFileName
-        );
-
-        if (File.Exists(fullPath))
-        {
-            File.Delete(fullPath);
-        }
-
-        _db.Files.Remove(fileRecord);
-
-        await _db.SaveChangesAsync();
-    }
-
-    public async Task<FileResponseDto?> GetFileAsync(Guid id, Guid userId)
-    {
-        var filedata = await _db.Files.FirstOrDefaultAsync(file => file.Id == id && file.UserId == userId);
+        var filedata = await _db.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userId);
         if (filedata == null) return null;
         return new FileResponseDto(
             filedata.Id,
@@ -102,9 +62,9 @@ public class FileService(ApplicationDbContext db) : IFileService
         );
     }
 
-    public async Task<FileRecord?> GetDownloadFileAsync(Guid id, Guid userId)
+    public async Task<DownloadFileDto> DownloadFileAsync(Guid fileId, Guid userId)
     {
-        var file = await _db.Files.FirstOrDefaultAsync(file => file.Id == id && file.UserId == userId);
+        var file = await _db.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userId);
 
         if (file == null)
         {
@@ -115,7 +75,29 @@ public class FileService(ApplicationDbContext db) : IFileService
 
         await _db.SaveChangesAsync();
 
-        return file;
+        var Stream = await _fileStorage.GetFileAsync(file.StorageKey);
+
+        return new DownloadFileDto(
+            Stream,
+            file.ContentType,
+            file.OriginalFileName
+        );
+    }
+
+    public async Task DeleteFileAsync(Guid fileId, Guid userId)
+    {
+        var fileRecord = await _db.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userId);
+
+        if (fileRecord == null)
+        {
+            throw new FileNotFoundException();
+        }
+
+        await _fileStorage.DeleteFileAsync(fileRecord.StorageKey);
+
+        _db.Files.Remove(fileRecord);
+
+        await _db.SaveChangesAsync();
     }
 
 }

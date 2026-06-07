@@ -1,7 +1,4 @@
-using FileShareAPI.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using FileShareAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -19,6 +16,14 @@ public class FileController : ControllerBase
     public FileController(IFileService fileService)
     {
         _fileService = fileService;
+    }
+
+    private Guid? GetCurrentUserId()
+    {
+        var userIdValue = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        return Guid.TryParse(userIdValue, out var userId) ? userId : null;
     }
 
     [HttpGet("test")]
@@ -47,7 +52,7 @@ public class FileController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult> FileList()
+    public async Task<ActionResult> GetFiles()
     {
         var userId = GetCurrentUserId();
         if (userId == null)
@@ -60,7 +65,7 @@ public class FileController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult> Getfile(Guid id)
+    public async Task<ActionResult> GetFile(Guid id)
     {
         var userId = GetCurrentUserId();
         if (userId == null)
@@ -79,7 +84,7 @@ public class FileController : ControllerBase
     }
 
     [HttpGet("download/{id}")]
-    public async Task<ActionResult> DownloadFile(Guid id)
+    public async Task<ActionResult> Download(Guid id)
     {
         var userId = GetCurrentUserId();
         if (userId == null)
@@ -87,36 +92,19 @@ public class FileController : ControllerBase
             return Unauthorized();
         }
 
-        var file = await _fileService.GetDownloadFileAsync(id, userId.Value);
+        var file = await _fileService.DownloadFileAsync(id, userId.Value);
 
         if (file == null)
         {
             return NotFound("File not found");
         }
 
-        var fullPath = Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "Storage/uploads",
-            file.StoredFileName
-        );
-
-        if (!System.IO.File.Exists(fullPath))
-        {
-            return NotFound("File does not exist");
-        }
-
-        Response.Headers.CacheControl = "no-store";
-
-        return PhysicalFile(
-            fullPath,
-            file.ContentType,
-            file.OriginalFileName
-        );
+        return File(file.Stream, file.ContentType, file.FileName);
     }
 
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteFile(Guid id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         var userId = GetCurrentUserId();
         if (userId == null)
@@ -136,11 +124,4 @@ public class FileController : ControllerBase
         }
     }
 
-    private Guid? GetCurrentUserId()
-    {
-        var userIdValue = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
-            ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-        return Guid.TryParse(userIdValue, out var userId) ? userId : null;
-    }
 }

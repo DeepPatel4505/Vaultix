@@ -75,6 +75,7 @@ builder.Services.AddCors(options =>
                   .AllowAnyMethod();
         });
 });
+builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
 builder.Services.AddScoped<IFileService, FileService>();
 var port = Environment.GetEnvironmentVariable("PORT");
 
