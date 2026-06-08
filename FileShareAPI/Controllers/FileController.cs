@@ -73,14 +73,15 @@ public class FileController : ControllerBase
     public async Task<IActionResult> Download(Guid id)
     {
 
-        var file = await _fileService.DownloadFileAsync(id, GetCurrentUserId());
-
-        if (file == null)
+        try
+        {
+            var file = await _fileService.DownloadFileAsync(id, GetCurrentUserId());
+            return File(file.Stream, file.ContentType, file.FileName);
+        }
+        catch (FileNotFoundException)
         {
             return NotFound("File not found");
         }
-
-        return File(file.Stream, file.ContentType, file.FileName);
     }
 
 
