@@ -34,9 +34,9 @@ public class LocalFileStorage : IFileStorage
         );
     }
 
-    public async Task<Stream> GetFileAsync(string storedFileName)
+    public async Task<Stream> GetFileAsync(string storageKey)
     {
-        var fullPath = Path.Combine(_storagePath, storedFileName);
+        var fullPath = Path.Combine(_storagePath, storageKey);
 
         if (!File.Exists(fullPath))
         {
@@ -46,9 +46,9 @@ public class LocalFileStorage : IFileStorage
         return new FileStream(fullPath, FileMode.Open, FileAccess.Read);
     }
 
-    public async Task DeleteFileAsync(string storedFileName)
+    public async Task DeleteFileAsync(string storageKey)
     {
-        var fullPath = Path.Combine(_storagePath, storedFileName);
+        var fullPath = Path.Combine(_storagePath, storageKey);
 
         if (File.Exists(fullPath))
         {
