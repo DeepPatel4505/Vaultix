@@ -7,6 +7,6 @@ public interface IFileStorage
 {
     StorageProvider StorageProvider { get; }
     Task<StorageUploadResultDto> UploadAsync(IFormFile file);
-    Task<Stream> GetFileAsync(string storedFileName);
-    Task DeleteFileAsync(string storedFileName);
+    Task<Stream> GetFileAsync(string storageKey);
+    Task DeleteFileAsync(string storageKey);
 }

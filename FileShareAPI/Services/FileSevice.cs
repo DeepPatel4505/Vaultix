@@ -11,6 +11,8 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
     private readonly ApplicationDbContext _db = db;
     private readonly IFileStorage _fileStorage = fileStorage;
 
+    private StorageProvider ActiveStorageProvider => _fileStorage.StorageProvider;
+
     public async Task<FileResponseDto> UploadAsync(IFormFile file, Guid userId)
     {
         var storedFileName = await _fileStorage.UploadAsync(file);
@@ -20,7 +22,7 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
             Id = Guid.NewGuid(),
             UserId = userId,
             OriginalFileName = file.FileName,
-            StorageProvider = StorageProvider.local,
+            StorageProvider = ActiveStorageProvider,
             StorageKey = storedFileName.StorageKey,
             ContentType = file.ContentType,
             Size = file.Length,
@@ -41,6 +43,7 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
     {
         var fileList = await _db.Files
             .Where(file => file.UserId == userId)
+            .Where(file => file.StorageProvider == ActiveStorageProvider)
             .ToListAsync();
         return [.. fileList.Select(f => new FileListDto(
             f.Id,
@@ -52,7 +55,7 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
 
     public async Task<FileResponseDto?> GetFileAsync(Guid fileId, Guid userId)
     {
-        var filedata = await _db.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userId);
+        var filedata = await _db.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userId && file.StorageProvider == ActiveStorageProvider);
         if (filedata == null) return null;
         return new FileResponseDto(
             filedata.Id,
@@ -64,13 +67,7 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
 
     public async Task<DownloadFileDto> DownloadFileAsync(Guid fileId, Guid userId)
     {
-        var file = await _db.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userId);
-
-        if (file == null)
-        {
-            return null;
-        }
-
+        var file = await _db.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userId && file.StorageProvider == ActiveStorageProvider) ?? throw new FileNotFoundException();
         file.DownloadCount++;
 
         await _db.SaveChangesAsync();
@@ -86,7 +83,7 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
 
     public async Task<bool> DeleteFileAsync(Guid fileId, Guid userId)
     {
-        var fileRecord = await _db.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userId);
+        var fileRecord = await _db.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userId && file.StorageProvider == ActiveStorageProvider);
 
         if (fileRecord == null)
         {

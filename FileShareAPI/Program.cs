@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi;
+using FileShareAPI.Options;
+using Amazon.S3;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Http.Features;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +39,16 @@ builder.Services.AddOpenApi(options =>
     });
 });
 builder.Services.AddControllers();
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit =
+        100 * 1024 * 1024;
+});
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize =
+        100 * 1024 * 1024; // 100 MB
+});
 
 var jwtsettings = builder.Configuration.GetSection("Jwt");
 builder.Services
@@ -75,7 +89,24 @@ builder.Services.AddCors(options =>
                   .AllowAnyMethod();
         });
 });
-builder.Services.AddScoped<IFileStorage, LocalFileStorage>();
+
+builder.Services.Configure<R2Options>(builder.Configuration.GetSection("R2Storage"));
+builder.Services.AddSingleton<IAmazonS3>(sp =>
+{
+    var config = sp.GetRequiredService<IOptions<R2Options>>().Value;
+
+    return new AmazonS3Client(
+        config.AccessKey,
+        config.SecretKey,
+        new AmazonS3Config
+        {
+            ServiceURL = config.Endpoint,
+            ForcePathStyle = true
+        }
+    );
+});
+
+builder.Services.AddScoped<IFileStorage, R2FileStorage>();
 builder.Services.AddScoped<IFileService, FileService>();
 var port = Environment.GetEnvironmentVariable("PORT");
 
