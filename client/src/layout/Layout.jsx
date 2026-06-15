@@ -116,7 +116,7 @@ const Layout = () => {
 
     // Calculate Dynamic Storage Usage
     const totalSize = files.reduce((acc, f) => acc + Number(f.size || 0), 0);
-    const storageLimit = 100 * 1024 * 1024; // 100 MB mock storage limit
+    const storageLimit = 1* 1024 * 1024 * 1024; // 1 GB mock storage limit
     const storagePercentage = Math.min((totalSize / storageLimit) * 100, 100);
 
     const sizeDisplay = (bytes) => {
@@ -264,7 +264,7 @@ const Layout = () => {
                     </div>
                     
                     <p className="text-[10px] text-muted-soft">
-                        {storagePercentage.toFixed(0)}% of 100 MB storage used.
+                        {storagePercentage.toFixed(0)}% of {1} GB storage used.
                     </p>
                 </div>
 
