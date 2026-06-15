@@ -43,9 +43,12 @@ const LandingPage = () => {
             <header className="sticky top-0 z-50 h-16 w-full border-b border-hairline bg-canvas/80 backdrop-blur-md transition-colors duration-200">
                 <div className="mx-auto flex h-full max-w-[1200px] items-center justify-between px-6">
                     {/* Logo */}
-                    <div className="flex items-center gap-2">
-                        <span className="font-display text-base font-bold uppercase tracking-wider text-primary select-none">
-                            File Share System
+                    <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => navigate("/")}>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-6.5 w-6.5 text-primary">
+                            <path d="M5 5l7 14 7-14" />
+                        </svg>
+                        <span className="font-display text-base font-bold uppercase tracking-wider text-primary">
+                            Vaultix
                         </span>
                     </div>
 
@@ -267,7 +270,7 @@ const LandingPage = () => {
                             Designed around your content
                         </h2>
                         <p className="text-sm text-muted leading-6">
-                            No placeholders or decorative abstractions. The File Share System workspace presents your folders and file extensions cleanly and visualizes previews immediately.
+                            No placeholders or decorative abstractions. The Vaultix workspace presents your folders and file extensions cleanly and visualizes previews immediately.
                         </p>
                     </header>
 
@@ -469,10 +472,10 @@ const LandingPage = () => {
                     {/* Bottom wordmark copyright row */}
                     <div className="border-t border-zinc-800/60 pt-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-left">
                         <span className="font-display text-sm font-semibold uppercase tracking-[0.2em] text-on-dark">
-                            File Share System
+                            Vaultix
                         </span>
                         <p className="text-[11px] text-[#71717a]">
-                            &copy; 2026 File Share System. All rights reserved.
+                            &copy; 2026 Vaultix. All rights reserved.
                         </p>
                     </div>
                 </div>

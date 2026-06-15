@@ -53,7 +53,7 @@ const Sidebar = ({ isOpen, onClose, theme, toggleTheme }) => {
             <div className="mb-8 flex items-center justify-between">
                 <div>
                     <span className="font-display text-sm font-bold uppercase tracking-wider text-primary">
-                        File Share System
+                        Vaultix
                     </span>
                     <p className="text-[11px] text-muted-soft tracking-wider mt-1">WORKSPACE</p>
                 </div>

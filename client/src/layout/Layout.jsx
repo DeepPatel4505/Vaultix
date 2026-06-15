@@ -145,12 +145,12 @@ const Layout = () => {
             {/* Sidebar Upper Container */}
             <div className="space-y-6">
                 {/* Brand Logo & Name */}
-                <div className="flex items-center gap-2.5 px-1.5 cursor-pointer" onClick={() => navigate("/")}>
-                    <span className="flex h-8.5 w-8.5 items-center justify-center rounded-md bg-primary text-on-primary font-display text-base font-extrabold select-none">
-                        F
-                    </span>
+                <div className="flex items-center gap-2 px-1.5 cursor-pointer select-none" onClick={() => navigate("/")}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary">
+                        <path d="M5 5l7 14 7-14" />
+                    </svg>
                     <span className="font-display text-sm font-bold uppercase tracking-wider text-primary">
-                        File Share
+                        Vaultix
                     </span>
                 </div>
 

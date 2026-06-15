@@ -62,7 +62,7 @@ const RegisterPage = () => {
             {/* Header Brand Wordmark */}
             <div className="mb-8 flex flex-col items-center">
                 <span className="font-display text-xs uppercase tracking-[0.3em] font-semibold text-primary">
-                    File Share System
+                    Vaultix
                 </span>
             </div>
 
