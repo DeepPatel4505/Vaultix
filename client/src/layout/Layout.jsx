@@ -28,12 +28,20 @@ const Layout = () => {
     // Theme Management
     const [theme, setTheme] = useState(() => {
         if (typeof window !== "undefined") {
-            const stored = localStorage.getItem("theme");
-            if (stored) return stored;
-            return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            try {
+                const stored = localStorage.getItem("theme");
+                if (stored) return stored;
+            } catch (e) {
+                console.warn("localStorage is not accessible:", e);
+            }
+            try {
+                return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+            } catch (e) {
+                return "light";
+            }
         }
         return "light";
-    });
+     });
 
     useEffect(() => {
         const root = window.document.documentElement;
@@ -42,7 +50,11 @@ const Layout = () => {
         } else {
             root.classList.remove("dark");
         }
-        localStorage.setItem("theme", theme);
+        try {
+            localStorage.setItem("theme", theme);
+        } catch (e) {
+            console.warn("localStorage is not accessible:", e);
+        }
     }, [theme]);
 
     const toggleTheme = () => {
