@@ -379,7 +379,7 @@ const LandingPage = () => {
                                 <p className="text-xs text-[#71717a] mt-1">per user / billed monthly</p>
                                 
                                 <ul className="mt-8 space-y-3 text-xs text-on-dark-soft">
-                                    <li className="flex items-center gap-2 text-on-dark">✓ Upload files up to 100MB</li>
+                                    <li className="flex items-center gap-2 text-on-dark">✓ Upload files up to 1Gb</li>
                                     <li className="flex items-center gap-2 text-on-dark">✓ Custom Folder hierarchy</li>
                                     <li className="flex items-center gap-2 text-on-dark">✓ Slide-over preview sheets</li>
                                     <li className="flex items-center gap-2 text-on-dark">✓ System-wide light/dark themes</li>
