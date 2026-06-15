@@ -25,3 +25,18 @@ dist-ssr
 
 
 .env
+.env.local
+.env.*.local
+
+# AI agent skills and metadata files
+.agent*
+.agents/
+.claude/
+.kilocode/
+.qwen/
+.zencoder/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+skills-lock.json
+DESIGN.md
