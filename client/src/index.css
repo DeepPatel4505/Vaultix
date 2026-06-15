@@ -46,6 +46,11 @@
   --badge-warning-text-color: #b45309;
   --badge-pink-text-color: #c026d3;
   --badge-violet-text-color: #7c3aed;
+
+  /* Translucent overlay variables for theme-responsive preview elements */
+  --overlay-surface: rgba(255, 255, 255, 0.75);
+  --overlay-surface-strong: rgba(255, 255, 255, 0.9);
+  --overlay-text: var(--ink);
 }
 
 .dark {
@@ -81,6 +86,11 @@
   --badge-warning-text-color: color-mix(in srgb, var(--color-warning) 90%, white);
   --badge-pink-text-color: color-mix(in srgb, var(--color-badge-pink) 90%, white);
   --badge-violet-text-color: color-mix(in srgb, var(--color-badge-violet) 90%, white);
+
+  /* Translucent overlay variables for dark theme elevated preview elements */
+  --overlay-surface: rgba(26, 26, 26, 0.8);
+  --overlay-surface-strong: rgba(18, 18, 20, 0.9);
+  --overlay-text: var(--ink);
 }
 
 @theme {
@@ -113,6 +123,10 @@
   --color-badge-violet: var(--badge-violet);
   --color-badge-emerald: var(--badge-emerald);
   --color-brand-accent-text: var(--brand-accent-text);
+
+  --color-overlay-surface: var(--overlay-surface);
+  --color-overlay-surface-strong: var(--overlay-surface-strong);
+  --color-overlay-text: var(--overlay-text);
 
   --color-surface-dark: #101010;
   --color-surface-dark-elevated: #1a1a1a;
@@ -215,6 +229,23 @@ select:focus-visible {
 }
 
 /* custom animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float:hover {
+  animation-play-state: paused;
+}
+
 @keyframes slideInRight {
   from {
     transform: translateX(100%);
@@ -315,9 +346,9 @@ select:focus-visible {
 }
 
 .badge-private {
-  background-color: var(--color-surface-card);
-  border-color: var(--color-hairline);
-  color: var(--color-muted);
+  background-color: var(--color-canvas);
+  border-color: var(--color-ink);
+  color: var(--color-ink);
 }
 
 .badge-expired {
@@ -343,6 +374,22 @@ select:focus-visible {
   border-color: color-mix(in srgb, var(--color-badge-violet) var(--badge-border-opacity), transparent);
   color: var(--badge-violet-text-color);
 }
+
+/* Premium perspective and 3D tilt effects */
+.perspective-hero {
+  perspective: 1200px;
+}
+
+.tilt-card {
+  transform-style: preserve-3d;
+  transform: perspective(1200px) rotateX(3deg) rotateY(-5deg) rotateZ(1deg);
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.8s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tilt-card:hover {
+  transform: perspective(1200px) rotateX(1deg) rotateY(-1.5deg) rotateZ(0deg) translateY(-2px);
+}
+
 
 
 
