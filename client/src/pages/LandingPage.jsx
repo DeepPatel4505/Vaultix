@@ -110,9 +110,9 @@ const LandingPage = () => {
                     {/* Hero Left Content */}
                     <div className="lg:col-span-7 space-y-6">
                         {/* Interactive Pill Accent */}
-                        <div className="inline-flex items-center gap-2 rounded-full bg-[#ECFDF5] border border-success/15 px-3 py-1 text-[11px] font-semibold tracking-wider text-success uppercase">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-success/10 border border-success/15 dark:border-success/25 px-3 py-1 text-[11px] font-semibold tracking-wider text-success dark:text-success/90 uppercase">
                             <span>Update v1.0</span>
-                            <span className="h-1 w-1 rounded-full bg-success" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-success" />
                             <span>System-Wide Dark Mode</span>
                         </div>
 
@@ -148,7 +148,7 @@ const LandingPage = () => {
                                     <span className="text-xl">📁</span>
                                     <span>photos / summer / vacation.png</span>
                                 </div>
-                                <span className="rounded-full bg-[#DBEAFE] text-brand-accent px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider font-mono">
+                                <span className="badge badge-shared font-mono">
                                     SHARED
                                 </span>
                             </div>
@@ -215,7 +215,7 @@ const LandingPage = () => {
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {/* Card 1 */}
                         <div className="rounded-lg bg-canvas p-8 border border-hairline space-y-4">
-                            <div className="rounded-lg bg-[#FEF3C7] text-[#D97706] p-3 w-fit select-none">
+                            <div className="rounded-lg bg-warning/10 border border-warning/15 dark:border-warning/25 text-warning dark:text-warning/90 p-3 w-fit select-none">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                                 </svg>
@@ -227,10 +227,10 @@ const LandingPage = () => {
                                 Structure files hierarchically by formatting paths with slashes. Group files dynamically into virtual folders without any server-side database requirements.
                             </p>
                         </div>
-
+ 
                         {/* Card 2 */}
                         <div className="rounded-lg bg-canvas p-8 border border-hairline space-y-4">
-                            <div className="rounded-lg bg-[#FCE7F3] text-[#DB2777] p-3 w-fit select-none">
+                            <div className="rounded-lg bg-badge-pink/10 border border-badge-pink/15 dark:border-badge-pink/25 text-badge-pink dark:text-badge-pink/90 p-3 w-fit select-none">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -243,10 +243,10 @@ const LandingPage = () => {
                                 Inspect file details instantly. Fetch and display image files or read text and code contents inline inside a sliding panel directly within the browser view.
                             </p>
                         </div>
-
+ 
                         {/* Card 3 */}
                         <div className="rounded-lg bg-canvas p-8 border border-hairline space-y-4">
-                            <div className="rounded-lg bg-[#D1FAE5] text-[#059669] p-3 w-fit select-none">
+                            <div className="rounded-lg bg-success/10 border border-success/15 dark:border-success/25 text-success dark:text-success/90 p-3 w-fit select-none">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 10.742l-2.617 2.943L3 10.742m15.316 0l-2.617 2.943L13 10.742M12 4v12" />
                                 </svg>
@@ -299,14 +299,14 @@ const LandingPage = () => {
                                 <h4 className="text-[10px] font-bold text-muted uppercase tracking-wider">Recent Files</h4>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <div className="rounded-lg border border-hairline bg-canvas p-4 flex items-center gap-3 select-none">
-                                        <span className="rounded-md bg-[#FCE7F3] text-[#DB2777] p-2 text-sm font-semibold font-mono">ZIP</span>
+                                        <span className="badge badge-pink font-mono px-2 py-1 text-xs">ZIP</span>
                                         <div className="min-w-0">
                                             <p className="truncate text-xs font-semibold text-ink">build-assets.zip</p>
                                             <p className="text-[10px] text-muted-soft">14.8 MB</p>
                                         </div>
                                     </div>
                                     <div className="rounded-lg border border-hairline bg-canvas p-4 flex items-center gap-3 select-none">
-                                        <span className="rounded-md bg-[#F3E8FF] text-[#7C3AED] p-2 text-sm font-semibold font-mono">PDF</span>
+                                        <span className="badge badge-violet font-mono px-2 py-1 text-xs">PDF</span>
                                         <div className="min-w-0">
                                             <p className="truncate text-xs font-semibold text-ink">invoice-summary.pdf</p>
                                             <p className="text-[10px] text-muted-soft">1.2 MB</p>
@@ -357,7 +357,7 @@ const LandingPage = () => {
 
                         {/* Pro Tier (Featured Inverted Dark Surface!) */}
                         <div className="rounded-lg bg-surface-dark p-8 border border-zinc-800 text-on-dark flex flex-col justify-between min-h-96 shadow-lg relative overflow-hidden">
-                            <div className="absolute right-4 top-4 rounded-full bg-success text-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                            <div className="absolute right-4 top-4 rounded-full bg-success/15 border border-success/30 text-success px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider">
                                 POPULAR
                             </div>
 
