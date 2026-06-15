@@ -570,7 +570,7 @@ const FilesPage = () => {
                                                                 {file.fileName.split("/").pop()}
                                                             </span>
                                                             {isFileShared && activeView !== "trash" && (
-                                                                <span className="rounded bg-brand-accent/10 border border-brand-accent/20 px-1 text-[8px] font-bold text-brand-accent select-none">
+                                                                <span className="badge badge-shared">
                                                                     SHARED
                                                                 </span>
                                                             )}

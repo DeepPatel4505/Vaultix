@@ -175,7 +175,7 @@ const Card = ({ fileMeta, onDownload, onDelete, onSelect, isDownloading }) => {
                             </svg>
                         </button>
                     ) : (
-                        <span className="text-[10px] font-bold text-error uppercase px-1.5 py-0.5 rounded bg-error/10 border border-error/20">
+                        <span className="badge badge-expired">
                             TRASHED
                         </span>
                     )}
@@ -195,7 +195,7 @@ const Card = ({ fileMeta, onDownload, onDelete, onSelect, isDownloading }) => {
                             {fileTypeInfo.type}
                         </span>
                         {isFileShared && activeView !== "trash" && (
-                            <span className="text-[9px] font-extrabold text-brand-accent uppercase tracking-wider">
+                            <span className="badge badge-shared">
                                 Shared
                             </span>
                         )}
