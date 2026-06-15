@@ -30,8 +30,8 @@ const FilePreviewPanel = ({ file, onClose, onDownload, onDelete, isDownloading }
         sizeInBytes < 1024
             ? `${sizeInBytes} Bytes`
             : sizeInBytes < 1024 * 1024
-            ? `${(sizeInBytes / 1024).toFixed(2)} KB`
-            : `${(sizeInBytes / (1024 * 1024)).toFixed(2)} MB`;
+                ? `${(sizeInBytes / 1024).toFixed(2)} KB`
+                : `${(sizeInBytes / (1024 * 1024)).toFixed(2)} MB`;
 
     const extension = file?.fileName?.split(".").pop()?.toLowerCase() ?? "";
     const isImage = ["jpg", "jpeg", "png", "gif", "svg", "webp", "bmp"].includes(extension);
@@ -65,8 +65,8 @@ const FilePreviewPanel = ({ file, onClose, onDownload, onDelete, isDownloading }
                     const response = await api.get(`/file/download/${file.id}`, {
                         responseType: "text",
                     });
-                    const text = typeof response.data === "string" 
-                        ? response.data 
+                    const text = typeof response.data === "string"
+                        ? response.data
                         : JSON.stringify(response.data, null, 2);
                     setTextContent(text.slice(0, 10000) + (text.length > 10000 ? "\n\n...[Preview truncated for length]..." : ""));
                 }
@@ -122,9 +122,8 @@ const FilePreviewPanel = ({ file, onClose, onDownload, onDelete, isDownloading }
                     {activeView !== "trash" && (
                         <button
                             onClick={() => toggleFavorite(file.id)}
-                            className={`p-1.5 rounded hover:bg-surface-soft transition-colors cursor-pointer ${
-                                isStarred ? "text-badge-orange" : "text-muted"
-                            }`}
+                            className={`p-1.5 rounded hover:bg-surface-soft transition-colors cursor-pointer ${isStarred ? "text-badge-orange" : "text-body dark:text-muted"
+                                }`}
                             aria-label={isStarred ? "Unstar file" : "Star file"}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5 fill-current" viewBox="0 0 20 20">
@@ -133,10 +132,10 @@ const FilePreviewPanel = ({ file, onClose, onDownload, onDelete, isDownloading }
                         </button>
                     )}
                 </div>
-                
+
                 <button
                     onClick={onClose}
-                    className="rounded-md p-1.5 hover:bg-surface-soft text-muted hover:text-primary transition-colors cursor-pointer"
+                    className="rounded-md p-1.5 hover:bg-surface-soft text-body hover:text-primary dark:text-muted dark:hover:text-primary transition-colors cursor-pointer"
                     aria-label="Close panel"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -148,16 +147,16 @@ const FilePreviewPanel = ({ file, onClose, onDownload, onDelete, isDownloading }
             {/* Properties Panel Body */}
             <div className="flex-1 overflow-y-auto p-5 space-y-6">
                 {/* Visual Preview Window */}
-                <div className="flex items-center justify-center rounded-lg border border-hairline bg-surface-card min-h-48 p-4 relative overflow-hidden">
+                <div className="flex items-center justify-center rounded-lg border border-hairline bg-canvas min-h-48 p-4 relative overflow-hidden">
                     {isLoadingPreview ? (
-                        <div className="flex flex-col items-center gap-1.5 text-xs text-muted">
+                        <div className="flex flex-col items-center gap-1.5 text-xs text-body dark:text-muted">
                             <span className="h-5 w-5 animate-spin rounded-full border border-hairline border-t-primary" />
                             <p>Loading preview…</p>
                         </div>
                     ) : previewError ? (
                         <div className="text-center p-4">
                             <span className="text-lg">⚠️</span>
-                            <p className="mt-1.5 text-xs text-muted">{previewError}</p>
+                            <p className="mt-1.5 text-xs text-body dark:text-muted font-medium">{previewError}</p>
                         </div>
                     ) : isImage && previewUrl ? (
                         <img
@@ -170,11 +169,11 @@ const FilePreviewPanel = ({ file, onClose, onDownload, onDelete, isDownloading }
                             {textContent}
                         </pre>
                     ) : (
-                        <div className="text-center p-5 text-muted">
-                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface-soft text-2xl">
+                        <div className="text-center p-5 text-body dark:text-muted">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-canvas border border-hairline text-2xl shadow-xs">
                                 📄
                             </div>
-                            <p className="mt-2 text-xs">No preview available</p>
+                            <p className="mt-2 text-xs font-medium">No preview available</p>
                         </div>
                     )}
                 </div>
@@ -182,48 +181,48 @@ const FilePreviewPanel = ({ file, onClose, onDownload, onDelete, isDownloading }
                 {/* File Information Fields */}
                 <div className="space-y-4 border-t border-hairline/40 pt-5">
                     <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-soft select-none">File Name</h4>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-body dark:text-muted-soft select-none">File Name</h4>
                         <p className="mt-1 text-sm font-bold text-ink break-all select-all leading-tight">{file.fileName}</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-soft select-none">Size</h4>
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-body dark:text-muted-soft select-none">Size</h4>
                             <p className="mt-1 text-sm font-bold text-ink leading-none">{sizeDisplay}</p>
                         </div>
                         <div>
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-soft select-none">Downloads</h4>
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-body dark:text-muted-soft select-none">Downloads</h4>
                             <p className="mt-1 text-sm font-bold text-ink leading-none">{file.downloadCount ?? 0} times</p>
                         </div>
                     </div>
 
                     <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-soft select-none">Uploaded Date</h4>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-body dark:text-muted-soft select-none">Uploaded Date</h4>
                         <p className="mt-1 text-sm font-bold text-ink leading-none">{formatDate(file.uploadedAt)}</p>
                     </div>
                 </div>
 
                 {/* Sharing URL box */}
                 {activeView !== "trash" && (
-                    <div className="rounded-lg border border-hairline bg-surface-soft p-4 space-y-2.5">
+                    <div className="rounded-lg border border-hairline bg-canvas p-4 space-y-2.5">
                         <div>
                             <h4 className="text-xs font-bold text-primary select-none leading-none">Share Link</h4>
-                            <p className="text-[10px] text-muted-soft mt-1.5 leading-tight">Anyone with link can download file.</p>
+                            <p className="text-[10px] text-body dark:text-muted-soft mt-1.5 leading-tight">Anyone with link can download file.</p>
                         </div>
-                        
+
                         <div className="flex gap-2">
                             <input
                                 type="text"
                                 readOnly
                                 value={shareUrl}
-                                className="flex-1 rounded border border-hairline bg-canvas px-3 py-1.5 text-xs text-muted focus:outline-none"
+                                className="flex-1 rounded border border-hairline bg-canvas px-3 py-1.5 text-xs text-body dark:text-muted focus:outline-none"
                             />
                             <button
                                 onClick={handleCopyLink}
                                 className={`
                                     rounded px-3 py-1.5 text-xs font-bold transition-all cursor-pointer select-none
-                                    ${copied 
-                                        ? "bg-success text-white" 
+                                    ${copied
+                                        ? "bg-success text-white"
                                         : "bg-primary text-on-primary hover:bg-primary-hover active:scale-95"
                                     }
                                 `}
@@ -248,7 +247,7 @@ const FilePreviewPanel = ({ file, onClose, onDownload, onDelete, isDownloading }
                             </svg>
                             <span>Restore file</span>
                         </button>
-                        
+
                         <button
                             onClick={handleDeleteClick}
                             className="rounded border border-error bg-canvas p-2 text-error hover:bg-error/5 transition-colors cursor-pointer select-none"
@@ -268,9 +267,8 @@ const FilePreviewPanel = ({ file, onClose, onDownload, onDelete, isDownloading }
                                 }
                             }}
                             disabled={isDownloading}
-                            className={`flex-1 flex items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-sm font-bold text-on-primary transition-colors cursor-pointer select-none ${
-                                isDownloading ? "bg-primary-active opacity-90 cursor-wait" : "hover:bg-primary-hover"
-                            }`}
+                            className={`flex-1 flex items-center justify-center gap-2 rounded bg-primary px-4 py-2 text-sm font-bold text-on-primary transition-colors cursor-pointer select-none ${isDownloading ? "bg-primary-active opacity-90 cursor-wait" : "hover:bg-primary-hover"
+                                }`}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                 {isDownloading ? (
@@ -284,7 +282,7 @@ const FilePreviewPanel = ({ file, onClose, onDownload, onDelete, isDownloading }
                             </svg>
                             <span>{isDownloading ? "Downloading..." : "Download"}</span>
                         </button>
-                        
+
                         <button
                             onClick={handleDeleteClick}
                             className="rounded border border-error bg-canvas p-2 text-error hover:bg-error/5 transition-colors cursor-pointer select-none"

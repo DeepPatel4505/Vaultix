@@ -1,11 +1,107 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { motion, AnimatePresence } from "framer-motion";
+import resumeImg from "../assets/preview/resume.png";
+import videoImg from "../assets/preview/video.webp";
+import presentationImg from "../assets/preview/presentation.png";
+import vacationImg from "../assets/preview/vacation.webp";
+
+const slideVariants = {
+    enter: (direction) => ({
+        x: direction > 0 ? "100%" : "-100%",
+        opacity: 0,
+    }),
+    center: {
+        x: 0,
+        opacity: 1,
+    },
+    exit: (direction) => ({
+        x: direction < 0 ? "100%" : "-100%",
+        opacity: 0,
+    })
+};
+
+const PREVIEW_FILES = [
+    {
+        icon: "🖼️",
+        name: "summer_vacation_2026.jpg",
+        type: "Image",
+        size: "2.0 MB",
+        status: "SHARED",
+        downloads: "142",
+        link: "https://fileshare.sys/s/summer-vacation",
+        asset: vacationImg,
+        path: "photos / summer / vacation.jpg"
+    },
+    {
+        icon: "📄",
+        name: "Deep_Patel_Resume.pdf",
+        type: "PDF Document",
+        size: "380 KB",
+        status: "PRIVATE",
+        downloads: "0",
+        link: "https://fileshare.sys/s/deep-patel-resume",
+        asset: resumeImg,
+        path: "documents / career / resume.pdf"
+    },
+    {
+        icon: "📊",
+        name: "Q3_Project_Presentation.pptx",
+        type: "PowerPoint",
+        size: "328 KB",
+        status: "SHARED",
+        downloads: "89",
+        link: "https://fileshare.sys/s/q3-presentation",
+        asset: presentationImg,
+        path: "presentations / pitch / presentation.pptx"
+    },
+    {
+        icon: "🎥",
+        name: "Product_Demo_Walkthrough.mp4",
+        type: "MPEG-4 Video",
+        size: "5.7 MB",
+        status: "PUBLIC",
+        downloads: "1,240",
+        link: "https://fileshare.sys/s/product-walkthrough",
+        asset: videoImg,
+        path: "media / exports / walkthrough.mp4"
+    }
+];
 
 const LandingPage = () => {
     const { token } = useAuth();
     const navigate = useNavigate();
     const [copied, setCopied] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [isHovered, setIsHovered] = useState(false);
+    const [direction, setDirection] = useState(1);
+
+    useEffect(() => {
+        if (isHovered) return;
+        const interval = setInterval(() => {
+            setDirection(1);
+            setActiveIndex((prev) => (prev + 1) % PREVIEW_FILES.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [isHovered]);
+
+    const handlePrev = (e) => {
+        if (e) e.stopPropagation();
+        setDirection(-1);
+        setActiveIndex((prev) => (prev - 1 + PREVIEW_FILES.length) % PREVIEW_FILES.length);
+    };
+
+    const handleNext = (e) => {
+        if (e) e.stopPropagation();
+        setDirection(1);
+        setActiveIndex((prev) => (prev + 1) % PREVIEW_FILES.length);
+    };
+
+    const handleSetIndex = (idx) => {
+        setDirection(idx > activeIndex ? 1 : -1);
+        setActiveIndex(idx);
+    };
 
     const [theme, setTheme] = useState(() => {
         if (typeof window !== "undefined") {
@@ -42,12 +138,14 @@ const LandingPage = () => {
         setTheme((prev) => (prev === "light" ? "dark" : "light"));
     };
 
-    const handleCopyDemoLink = (e) => {
+    const handleCopyDemoLink = (e, link) => {
         e.stopPropagation();
-        navigator.clipboard.writeText("https://fileshare.sys/download/x92b-vacation");
+        navigator.clipboard.writeText(link || "https://fileshare.sys/download/x92b-vacation");
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
+
+    const activeFile = PREVIEW_FILES[activeIndex];
 
     return (
         <div className="min-h-screen bg-canvas text-ink flex flex-col transition-colors duration-200">
@@ -152,58 +250,146 @@ const LandingPage = () => {
                     </div>
 
                     {/* Hero Right Mockup Card */}
-                    <div className="lg:col-span-5">
-                        <div className="relative rounded-xl border border-hairline bg-canvas p-6 shadow-2xl transition-all duration-200">
-                            {/* Card Header */}
-                            <div className="flex items-center justify-between border-b border-hairline pb-4 mb-4 select-none">
-                                <div className="flex items-center gap-2 text-xs font-semibold text-ink">
-                                    <span className="text-xl">📁</span>
-                                    <span>photos / summer / vacation.png</span>
+                    <div className="lg:col-span-5 select-none perspective-hero"
+                        onMouseEnter={() => setIsHovered(true)}
+                        onMouseLeave={() => setIsHovered(false)}
+                    >
+                        <div className="animate-float w-full relative">
+                            {/* Dynamic ambient colored glow behind the card */}
+                            <div className={`absolute -inset-8 bg-linear-to-tr from-orange-500/20 to-rose-500/10 dark:from-orange-500/15 dark:to-rose-500/5 rounded-3xl blur-3xl opacity-60 dark:opacity-50 pointer-events-none transition-all duration-1000 ease-in-out`} />
+
+                            <div className="tilt-card relative rounded-2xl border border-hairline bg-overlay-surface-strong backdrop-blur-2xl shadow-3xl overflow-hidden hover:border-primary/20">
+                                {/* Card Header */}
+                                <div className="px-4 py-3 border-b border-hairline flex items-center justify-between text-xs select-none">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                        <span className="text-base shrink-0"> {'>'}</span>
+                                        <span className="truncate font-mono text-[10px] text-ink flex items-center">
+                                            {activeFile.path.replace(/\s/g, "")}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-sans text-[10px] font-bold text-ink uppercase tracking-wider">
+                                            {activeFile.type}
+                                        </span>
+                                        <span className={`badge ${activeFile.status === "SHARED" ? "badge-shared" :
+                                            activeFile.status === "PUBLIC" ? "badge-success" :
+                                                "badge-private"
+                                            } font-mono text-[9px] px-2 py-0.5 flex items-center gap-1.5`}>
+                                            <span className={`h-1 w-1 rounded-full ${activeFile.status === "SHARED" ? "bg-brand-accent" :
+                                                activeFile.status === "PUBLIC" ? "bg-success" :
+                                                    "bg-ink"
+                                                } animate-pulse`} />
+                                            {activeFile.status}
+                                        </span>
+                                    </div>
                                 </div>
-                                <span className="badge badge-shared font-mono">
-                                    SHARED
-                                </span>
-                            </div>
 
-                            {/* Card Image Area */}
-                            <div className="flex items-center justify-center rounded-lg bg-surface-card p-4 min-h-48 border border-hairline mb-4 relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-gradient-to-tr from-orange-400/20 to-blue-400/10 mix-blend-overlay" />
-                                {/* Stylized Mountain SVG placeholder representation */}
-                                <svg className="h-32 w-full text-muted-soft opacity-60" viewBox="0 0 100 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M10 50 L40 15 L55 35 L70 20 L90 50 Z" fill="currentColor" />
-                                    <circle cx="25" cy="15" r="4" fill="orange" />
-                                </svg>
-                            </div>
+                                {/* Card Image Area with Fixed Height and Framer Motion Transitions */}
+                                <div className="h-80 md:h-[380px] w-full relative overflow-hidden bg-overlay-surface flex items-center justify-center">
+                                    <AnimatePresence initial={false} custom={direction}>
+                                        <motion.div
+                                            key={activeIndex}
+                                            custom={direction}
+                                            variants={slideVariants}
+                                            initial="enter"
+                                            animate="center"
+                                            exit="exit"
+                                            transition={{
+                                                x: { type: "spring", stiffness: 300, damping: 30 },
+                                                opacity: { duration: 0.25 },
+                                                filter: { duration: 0.25 }
+                                            }}
+                                            className="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden"
+                                        >
+                                            <img
+                                                src={activeFile.asset}
+                                                alt={activeFile.name}
+                                                className={`w-full h-full ${activeFile.type === "Image" || activeFile.type === "MPEG-4 Video"
+                                                    ? "object-cover"
+                                                    : "object-contain p-4"
+                                                    }`}
+                                            />
 
-                            {/* Card Meta Stats */}
-                            <div className="flex justify-between text-[11px] text-muted font-medium mb-4 select-none">
-                                <span>Size: 4.2 MB</span>
-                                <span className="flex items-center gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4a3 3 0 00-3-3m3 3a3 3 0 003-3m-3 3V4" />
-                                    </svg>
-                                    142 Downloads
-                                </span>
-                            </div>
 
-                            {/* Share link input */}
-                            <div className="rounded-lg bg-surface-soft p-3.5 space-y-2.5 border border-hairline text-left">
-                                <span className="text-xs font-semibold text-primary block">Direct Share Link</span>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        readOnly
-                                        value="https://fileshare.sys/download/x92b-vacation"
-                                        className="flex-1 rounded-md border border-hairline bg-canvas px-3 py-1.5 text-xs text-muted focus:outline-none"
-                                    />
-                                    <button
-                                        onClick={handleCopyDemoLink}
-                                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                                            copied ? "bg-success text-white" : "bg-primary text-on-primary hover:bg-primary-hover active:scale-95"
-                                        }`}
-                                    >
-                                        {copied ? "Copied!" : "Copy"}
-                                    </button>
+                                            {activeFile.type === "PowerPoint" && (
+                                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-overlay-surface-strong px-2.5 py-1.5 rounded-full border border-hairline select-none">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-ink" />
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-ink/20" />
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-ink/20" />
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-ink/20" />
+                                                </div>
+                                            )}
+
+                                            {activeFile.type === "MPEG-4 Video" && (
+                                                <>
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-ink/5 hover:bg-ink/10 transition-colors duration-200">
+                                                        <button className="h-10 w-10 rounded-full bg-overlay-surface-strong text-ink hover:scale-105 active:scale-95 transition-all shadow-md flex items-center justify-center cursor-pointer pl-0.5 border border-hairline">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4.5 h-4.5 text-ink">
+                                                                <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                    <div className="absolute bottom-0 inset-x-0 bg-linear-to-t from-overlay-surface-strong/40 to-transparent p-3 pt-6 flex items-center justify-between text-[9px] text-ink select-none">
+                                                        <div className="flex items-center gap-2.5 w-full px-2">
+                                                            <span className="font-mono">0:14</span>
+                                                            <div className="flex-1 h-0.75 bg-ink/20 rounded-full relative">
+                                                                <div className="absolute top-0 left-0 bottom-0 bg-ink w-[35%] rounded-full" />
+                                                            </div>
+                                                            <span className="font-mono">1:42</span>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </motion.div>
+                                    </AnimatePresence>
+
+                                    {/* Hover Navigation Buttons */}
+                                    <AnimatePresence>
+                                        {isHovered && (
+                                            <>
+                                                <motion.button
+                                                    initial={{ opacity: 0, x: -10 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    exit={{ opacity: 0, x: -10 }}
+                                                    onClick={(e) => handlePrev(e)}
+                                                    className="absolute left-3 top-1/2 -translate-y-1/2 z-30 h-7 w-7 rounded-full bg-overlay-surface text-ink hover:bg-overlay-surface-strong border border-hairline shadow-lg cursor-pointer backdrop-blur-xs flex items-center justify-center text-sm font-bold"
+                                                    aria-label="Previous preview"
+                                                >
+                                                    ‹
+                                                </motion.button>
+                                                <motion.button
+                                                    initial={{ opacity: 0, x: 10 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    exit={{ opacity: 0, x: 10 }}
+                                                    onClick={(e) => handleNext(e)}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 z-30 h-7 w-7 rounded-full bg-overlay-surface text-ink hover:bg-overlay-surface-strong border border-hairline shadow-lg cursor-pointer backdrop-blur-xs flex items-center justify-center text-sm font-bold"
+                                                    aria-label="Next preview"
+                                                >
+                                                    ›
+                                                </motion.button>
+                                            </>
+                                        )}
+                                    </AnimatePresence>
+
+                                    {/* Switcher Dots (nav-pill-group treatment as minimal dot navigators) */}
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex justify-center">
+                                        <div className="inline-flex rounded-full bg-overlay-surface-strong backdrop-blur-md p-1.5 gap-2 border border-hairline shadow-lg select-none">
+                                            {PREVIEW_FILES.map((file, idx) => {
+                                                const isActive = activeIndex === idx;
+                                                return (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => handleSetIndex(idx)}
+                                                        aria-label={`Showcase file ${idx + 1}`}
+                                                        className={`h-1.5 w-1.5 rounded-full transition-all duration-300 cursor-pointer ${isActive
+                                                            ? "bg-ink scale-125 w-3.5"
+                                                            : "bg-ink/40 hover:bg-ink/70"
+                                                            }`}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -239,7 +425,7 @@ const LandingPage = () => {
                                 Structure files hierarchically by formatting paths with slashes. Group files dynamically into virtual folders without any server-side database requirements.
                             </p>
                         </div>
- 
+
                         {/* Card 2 */}
                         <div className="rounded-lg bg-canvas p-8 border border-hairline space-y-4">
                             <div className="rounded-lg bg-badge-pink/10 border border-badge-pink/15 dark:border-badge-pink/25 text-badge-pink dark:text-badge-pink/90 p-3 w-fit select-none">
@@ -255,7 +441,7 @@ const LandingPage = () => {
                                 Inspect file details instantly. Fetch and display image files or read text and code contents inline inside a sliding panel directly within the browser view.
                             </p>
                         </div>
- 
+
                         {/* Card 3 */}
                         <div className="rounded-lg bg-canvas p-8 border border-hairline space-y-4">
                             <div className="rounded-lg bg-success/10 border border-success/15 dark:border-success/25 text-success dark:text-success/90 p-3 w-fit select-none">
@@ -351,7 +537,7 @@ const LandingPage = () => {
                                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">Starter</h3>
                                 <p className="font-display text-4xl font-semibold tracking-tight text-ink mt-3">$0</p>
                                 <p className="text-xs text-muted-soft mt-1">free forever</p>
-                                
+
                                 <ul className="mt-8 space-y-3 text-xs text-muted">
                                     <li className="flex items-center gap-2">✓ Upload files up to 10MB</li>
                                     <li className="flex items-center gap-2">✓ Standard sharing links</li>
@@ -377,7 +563,7 @@ const LandingPage = () => {
                                 <h3 className="text-xs font-semibold uppercase tracking-wider text-on-dark-soft">Pro Workspace</h3>
                                 <p className="font-display text-4xl font-semibold tracking-tight text-on-dark mt-3">$12</p>
                                 <p className="text-xs text-[#71717a] mt-1">per user / billed monthly</p>
-                                
+
                                 <ul className="mt-8 space-y-3 text-xs text-on-dark-soft">
                                     <li className="flex items-center gap-2 text-on-dark">✓ Upload files up to 1Gb</li>
                                     <li className="flex items-center gap-2 text-on-dark">✓ Custom Folder hierarchy</li>
@@ -400,7 +586,7 @@ const LandingPage = () => {
                                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted">Enterprise</h3>
                                 <p className="font-display text-4xl font-semibold tracking-tight text-ink mt-3">Custom</p>
                                 <p className="text-xs text-muted-soft mt-1">for large distribution teams</p>
-                                
+
                                 <ul className="mt-8 space-y-3 text-xs text-muted">
                                     <li className="flex items-center gap-2">✓ Unlimited file size uploads</li>
                                     <li className="flex items-center gap-2">✓ Virtualized tables for large assets</li>
