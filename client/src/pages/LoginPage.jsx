@@ -58,7 +58,7 @@ const LoginPage = () => {
             {/* Header Brand Wordmark */}
             <div className="mb-8 flex flex-col items-center">
                 <span className="font-display text-xs uppercase tracking-[0.3em] font-semibold text-primary">
-                    File Share System
+                    Vaultix
                 </span>
             </div>
 
@@ -129,7 +129,7 @@ const LoginPage = () => {
                     </button>
 
                     <p className="text-xs text-muted text-center mt-4">
-                        New to File Share System?{" "}
+                        New to Vaultix?{" "}
                         <Link
                             to="/register"
                             className="font-semibold text-primary hover:underline hover:text-primary-hover"
