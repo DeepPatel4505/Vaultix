@@ -4,6 +4,7 @@ public record FileListDto(
     Guid Id,
     string FileName,
     long Size,
-    int DownloadCount
+    int DownloadCount,
+    DateTime UploadedAt
 );
 
