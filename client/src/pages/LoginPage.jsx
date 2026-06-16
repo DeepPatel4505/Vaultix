@@ -57,7 +57,10 @@ const LoginPage = () => {
         <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-6 text-ink select-none">
             {/* Header Brand Wordmark */}
             <div className="mb-8 flex flex-col items-center">
-                <span className="font-display text-xs uppercase tracking-[0.3em] font-semibold text-primary">
+                <span 
+                    className="font-display text-xs uppercase tracking-[0.3em] font-semibold text-primary cursor-pointer"
+                    onClick={() => navigate("/")}
+                    >
                     Vaultix
                 </span>
             </div>
