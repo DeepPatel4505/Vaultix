@@ -35,7 +35,8 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
             fileRecord.Id,
             fileRecord.OriginalFileName,
             fileRecord.Size,
-            fileRecord.DownloadCount
+            fileRecord.DownloadCount,
+            fileRecord.UploadedAt
         );
     }
 
@@ -49,7 +50,8 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
             f.Id,
             f.OriginalFileName,
             f.Size,
-            f.DownloadCount
+            f.DownloadCount,
+            f.UploadedAt
         ))];
     }
 
@@ -61,7 +63,8 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
             filedata.Id,
             filedata.OriginalFileName,
             filedata.Size,
-            filedata.DownloadCount
+            filedata.DownloadCount,
+            filedata.UploadedAt
         );
     }
 
