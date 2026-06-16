@@ -1,85 +1,70 @@
-# FileShareSystem
+<div align="center">
+  <img src="./client/public/favicon.svg" width="96" height="96" alt="Vaultix Logo" />
 
-<p align="center">
-  <img src="https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 10" />
-  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=0B1320" alt="React 19" />
-  <img src="https://img.shields.io/badge/Vite-Ready-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
-  <img src="https://img.shields.io/badge/PostgreSQL-Database-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
-</p>
+  # Vaultix
+  *A clean, file-first digital workspace and secure sharing platform*
 
-A small, practical file-sharing app with an ASP.NET Core API backend and a React + Vite frontend. Upload files, browse metadata, download files, and track download counts.
+  [![.NET Version](https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com)
+  [![React Version](https://img.shields.io/badge/React-v19.2-blue?style=flat-square&logo=react)](https://react.dev)
+  [![Vite Version](https://img.shields.io/badge/Vite-v8.0-646CFF?style=flat-square&logo=vite)](https://vite.dev)
+  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-06B6D4?style=flat-square&logo=tailwindcss)](https://tailwindcss.com)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-336791?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 
-**What it does**
-- Upload files through the API and store them on disk.
-- Persist file metadata in PostgreSQL using Entity Framework Core.
-- Present a simple frontend with file cards, metadata, and download/delete actions.
+  ⭐ If you like this project, star it on GitHub!
 
-**Stack**
-- Backend: ASP.NET Core Web API, Entity Framework Core, PostgreSQL, Swagger
-- Frontend: React 19, Vite, Axios, Tailwind CSS
-- Storage: Local filesystem for uploaded files (backend `Storage/uploads/`)
+  [Overview](#overview) • [Features](#features) • [Architecture](#architecture) • [Getting Started](#getting-started) • [API Documentation](#api-documentation) • [Production Deployment](#production-deployment)
+</div>
 
-**Project layout**
+---
 
+## Overview
+
+**Vaultix** is a premium, file-first digital workspace designed to keep the focus entirely on your content. Anchored on a clean, minimal design with elegant near-monochrome aesthetics and display typography, Vaultix prioritizes files, virtual directories, previews, and sharing workflows over complex administrative dashboards.
+
+The platform consists of:
+- **`FileShareAPI`**: A high-performance, robust REST API built with **ASP.NET Core Web API (.NET 10)**, using **Entity Framework Core** and **PostgreSQL** to manage metadata, and supporting local disk storage or AWS S3/Cloudflare R2 storage engines.
+- **`client`**: A fluid, modern single-page frontend application crafted with **React 19**, **Vite**, **Tailwind CSS v4**, and **Framer Motion 12** for responsive layouts and premium micro-interactions.
+
+> [!NOTE]
+> This repository is a monorepo containing both the backend API and frontend client. Both services can be run locally or containerized for production deployment.
+
+---
+
+## Features
+
+- 📁 **File-First Dashboard** — Navigate files, recent uploads, favorites, and shared resources in an intuitive personal workspace.
+- 📂 **Client-Side Folder System** — Organize assets hierarchically by formatting paths with slashes. Group files dynamically into virtual folders.
+- 📤 **Drag-and-Drop Uploads** — Easily upload files with progress indicators and instant visual feedback.
+- 👁️ **Slide-Over Previews** — View images, PDF documents, and plain-text files natively inside a sliding panel without leaving the workspace.
+- 🔒 **Granular Visibility Control** — Toggle file permissions between *Public*, *Private*, *Shared*, and *Expired* states.
+- 🔗 **Smart Link Sharing** — Generate direct download links and customize shareable routes with built-in clipboard copying.
+- 🛡️ **JWT Authentication** — Secure user signup, login, and authorization to protect user assets.
+- 📦 **Dual Storage Engines** — Automatically stores files on the local filesystem or easily routes them to Cloudflare R2 / AWS S3 storage buckets.
+
+---
+
+## Architecture
+
+Vaultix uses a thin-controller API architecture. Business logic resides in dedicated services, while persistence is handled by Entity Framework Core. Below is a layout showing the service orchestration and database relationships.
+
+### Directory Structure
 ```text
-FileShareSystem/
-├─ FileShareAPI/        # ASP.NET Core backend (controllers, services, EF migrations)
-└─ client/              # React + Vite frontend
+Vaultix/
+├── FileShareAPI/       # ASP.NET Core 10 Web API backend
+│   ├── Controllers/    # Thin HTTP endpoints (Auth, File operations)
+│   ├── Services/       # Business logic (JWT, Local/S3 storage engines, auth)
+│   ├── Data/           # EF Core ApplicationDbContext and entity mappings
+│   ├── Models/         # Database models (FileRecord, User)
+│   └── Migrations/     # Auto-generated database migrations
+└── client/             # React 19 + Vite frontend
+    ├── src/
+    │   ├── components/ # Reusable UI controls (Card, Upload, Previews)
+    │   ├── pages/      # View layouts (LandingPage, FilesPage, AuthPages)
+    │   └── lib/        # API clients & configuration (Axios instances)
+    └── public/         # Static assets and icons
 ```
 
-**Quick Start**
-
-Prerequisites: `.NET 10 SDK`, `Node.js 18+`, `PostgreSQL 15+`.
-
-Backend (API):
-
-```bash
-cd FileShareAPI
-dotnet restore
-dotnet ef database update
-dotnet run
-```
-
-Frontend (client):
-
-```bash
-cd client
-npm install
-npm run dev
-```
-
-Configure the frontend base URL by creating `client/.env` with:
-
-```env
-VITE_BACKEND_URL=https://localhost:7261
-```
-
-See `client/.env.example` for an example.
-
-**API (important endpoints)**
-- `GET /api/file/test` — health check
-- `POST /api/file` — upload a file (multipart/form-data)
-- `GET /api/file` — list files (metadata)
-- `GET /api/file/{id}` — get file record
-- `GET /download/{id}` — download stored file
-- `DELETE /api/file/{id}` — delete file and record
-
-**Architecture & File UML**
-
-Below is a compact view of the repository and a small class diagram showing core domain models. Use these to quickly reason about where code lives and what the main entities are.
-
-```mermaid
-%% Project file tree
-flowchart TB
-  A[FileShareSystem] --> B[FileShareAPI]
-  A --> C[client]
-  B --> B1[Controllers]
-  B --> B2[Services]
-  B --> B3[Data]
-  B --> B4[Models]
-  B --> B5[DTOs]
-```
-
+### Domain Model & Service UML
 ```mermaid
 classDiagram
   class FileRecord {
@@ -90,39 +75,137 @@ classDiagram
     +DateTime UploadDate
     +int DownloadCount
     +string StorageKey
+    +string StorageProvider
   }
+  
   class User {
     +Guid Id
     +string Username
     +string Email
     +string PasswordHash
   }
-  FileRecord --> "0..1" User : owner
 
-  %% Services
-  class IFileService
-  class IFileStorage
+  FileRecord --> "0..1" User : Owner
+  
+  class IFileService {
+    <<interface>>
+    +UploadFileAsync(Dto)
+    +GetFileAsync(Id)
+    +DeleteFileAsync(Id)
+  }
+  
+  class IFileStorage {
+    <<interface>>
+    +UploadAsync(File, Key)
+    +DownloadAsync(Key)
+    +DeleteAsync(Key)
+  }
+  
   IFileService ..> FileRecord
   IFileStorage ..> FileRecord
-
 ```
-
-Notes:
-- `StorageKey` is the filename/path used by the storage provider (`LocalFileStorage` by default).
-- The codebase keeps controllers thin; business logic lives in `Services/` and persistence in `Data/ApplicationDbContext.cs`.
-
-**Migrations & Database**
-- Migrations live under `FileShareAPI/Migrations/`. Run `dotnet ef database update` to apply them.
-- The default connection is configured in `appsettings.Development.json`.
-
-**Development tips**
-- Use Swagger (when running the API in Development) to exercise endpoints quickly: `https://localhost:<port>/swagger`.
-- If HTTPS ports differ between backend and frontend, update `VITE_BACKEND_URL`.
-
-**Where to look first (recommended files)**
-- Backend: `FileShareAPI/Controllers/FileController.cs`, `FileShareAPI/Services/FileSevice.cs`, `FileShareAPI/Services/LocalFileStorage.cs`
-- Frontend: `client/src/pages/FilesPage.jsx`, `client/src/lib/api.js`, `client/src/components/Card.jsx`
 
 ---
 
-If you'd like, I can also: add a PNG export of the UML, expand the architecture section with sequence diagrams, or update `client/.env.example` and a `README.client.md` for developer onboarding. Which would you prefer next?
+## Getting Started
+
+### Prerequisites
+
+Ensure you have the following installed:
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Node.js v20+](https://nodejs.org)
+- [PostgreSQL v15+](https://www.postgresql.org)
+
+---
+
+### Backend Setup
+
+1. **Configure Connection String**  
+   Configure PostgreSQL connections in `FileShareAPI/appsettings.json` (or `appsettings.Development.json`):
+   ```json
+   "ConnectionStrings": {
+     "DefaultConnection": "Host=localhost;Database=vaultix;Username=postgres;Password=your_password"
+   }
+   ```
+
+2. **Restore Dependencies & Migrate Database**  
+   From the root directory, navigate to `FileShareAPI`, restore NuGet packages, and apply EF migrations:
+   ```bash
+   cd FileShareAPI
+   dotnet restore
+   dotnet ef database update
+   ```
+
+3. **Start the API Server**  
+   Run the backend development server:
+   ```bash
+   dotnet run
+   ```
+   The API will initialize and bind by default to `https://localhost:7261` or `http://localhost:5242`.
+
+---
+
+### Frontend Setup
+
+1. **Environment Configuration**  
+   Navigate to the `client` directory and create a `.env` file based on `.env.example`:
+   ```bash
+   cd client
+   cp .env.example .env
+   ```
+   Modify `VITE_BACKEND_URL` to match your running backend port:
+   ```env
+   VITE_BACKEND_URL=https://localhost:7261
+   ```
+
+2. **Install & Run Frontend**  
+   Install node dependencies and launch the hot-reloading development server:
+   ```bash
+   npm install
+   npm run dev
+   ```
+   The workspace client will launch and run locally (usually on `http://localhost:5173`).
+
+---
+
+## API Documentation
+
+When running in `Development`, Vaultix features interactive API documentation built with **Scalar**. 
+
+Access the Scalar documentation panel to test HTTP operations at:
+`https://localhost:7261/docs` (or your corresponding localhost port).
+
+### Core Endpoints
+
+| HTTP Method | Endpoint | Description | Authentication |
+| :--- | :--- | :--- | :--- |
+| **POST** | `/api/auth/register` | Register a new account | Anonymous |
+| **POST** | `/api/auth/login` | Authenticate and obtain JWT token | Anonymous |
+| **GET** | `/api/file` | List metadata of all user files | JWT Bearer |
+| **POST** | `/api/file` | Upload a single file (multipart form data) | JWT Bearer |
+| **GET** | `/api/file/{id}` | Retrieve file details & metadata | JWT Bearer |
+| **DELETE** | `/api/file/{id}` | Delete file record and binary storage | JWT Bearer |
+| **GET** | `/download/{id}` | Public download link endpoint | Anonymous |
+
+---
+
+## Production Deployment
+
+### 1. Storage Provider Setup
+By default, Vaultix saves uploads on the local filesystem of the server. For production environments, configure **Cloudflare R2** or **Amazon S3** in your environment variable configurations:
+```json
+"R2Storage": {
+  "Endpoint": "https://<account_id>.r2.cloudflarestorage.com",
+  "AccessKey": "your_access_key",
+  "SecretKey": "your_secret_key",
+  "BucketName": "vaultix-uploads"
+}
+```
+
+### 2. CORS and Environments
+Ensure the allowed origin inside `FileShareAPI/Program.cs` matches the production deployment address of your client bundle. Build the optimized static distribution output from the client for deployment on static hosting:
+```bash
+cd client
+npm run build
+```
+This generates static files under the `client/dist/` directory, ready to serve via Nginx, Vercel, or AWS S3.

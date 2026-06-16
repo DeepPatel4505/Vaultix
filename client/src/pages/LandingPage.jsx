@@ -30,7 +30,7 @@ const PREVIEW_FILES = [
         size: "2.0 MB",
         status: "SHARED",
         downloads: "142",
-        link: "https://fileshare.sys/s/summer-vacation",
+        link: "https://vaultix.io/s/summer-vacation",
         asset: vacationImg,
         path: "photos / summer / vacation.jpg"
     },
@@ -41,7 +41,7 @@ const PREVIEW_FILES = [
         size: "380 KB",
         status: "PRIVATE",
         downloads: "0",
-        link: "https://fileshare.sys/s/deep-patel-resume",
+        link: "https://vaultix.io/s/deep-patel-resume",
         asset: resumeImg,
         path: "documents / career / resume.pdf"
     },
@@ -52,7 +52,7 @@ const PREVIEW_FILES = [
         size: "328 KB",
         status: "SHARED",
         downloads: "89",
-        link: "https://fileshare.sys/s/q3-presentation",
+        link: "https://vaultix.io/s/q3-presentation",
         asset: presentationImg,
         path: "presentations / pitch / presentation.pptx"
     },
@@ -63,7 +63,7 @@ const PREVIEW_FILES = [
         size: "5.7 MB",
         status: "PUBLIC",
         downloads: "1,240",
-        link: "https://fileshare.sys/s/product-walkthrough",
+        link: "https://vaultix.io/s/product-walkthrough",
         asset: videoImg,
         path: "media / exports / walkthrough.mp4"
     }
@@ -140,7 +140,7 @@ const LandingPage = () => {
 
     const handleCopyDemoLink = (e, link) => {
         e.stopPropagation();
-        navigator.clipboard.writeText(link || "https://fileshare.sys/download/x92b-vacation");
+        navigator.clipboard.writeText(link || "https://vaultix.io/download/x92b-vacation");
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -596,7 +596,7 @@ const LandingPage = () => {
                             </div>
 
                             <a
-                                href="mailto:sales@fileshare.sys"
+                                href="mailto:sales@vaultix.io"
                                 className="rounded-md border border-hairline bg-canvas py-2.5 text-center text-xs font-semibold text-ink hover:bg-surface-soft transition-colors mt-8 select-none focus-visible:ring-2 focus-visible:ring-primary block cursor-pointer"
                             >
                                 Contact Sales
