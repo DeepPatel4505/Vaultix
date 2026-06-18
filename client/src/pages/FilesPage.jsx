@@ -161,18 +161,13 @@ const FilesPage = () => {
     const onDownload = async (id, fileName) => {
         setDownloadingIds((prev) => ({ ...prev, [id]: true }));
         try {
-            const response = await api.get(`/file/download/${id}`, {
-                responseType: "blob",
-            });
-            const blob = new Blob([response.data]);
-            const url = window.URL.createObjectURL(blob);
+            const response = await api.get(`/file/download-link/${id}`);
             const link = document.createElement("a");
-            link.href = url;
-            link.download = fileName;
+            link.href = response.data.url;
+            link.style.display = "none";
             document.body.appendChild(link);
             link.click();
             link.remove();
-            window.URL.revokeObjectURL(url);
         } catch (err) {
             console.error("Download failed:", err);
             alert("Unable to download file.");

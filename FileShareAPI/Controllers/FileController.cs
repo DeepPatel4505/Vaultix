@@ -84,6 +84,19 @@ public class FileController : ControllerBase
         }
     }
 
+    [HttpGet("download-link/{id}")]
+    public async Task<ActionResult<DownloadLinkDto>> GetDownloadLink(Guid id)
+    {
+        try
+        {
+            var url = await _fileService.GenerateDownloadLinkAsync(id, GetCurrentUserId());
+            return Ok(new DownloadLinkDto { Url = url.Url });
+        }
+        catch (FileNotFoundException)
+        {
+            return NotFound("File not found");
+        }
+    }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)

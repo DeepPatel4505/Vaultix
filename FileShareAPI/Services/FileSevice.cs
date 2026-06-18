@@ -84,6 +84,16 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
         );
     }
 
+    public async Task<DownloadLinkDto> GenerateDownloadLinkAsync(Guid fileId, Guid userId)
+    {
+        var fileRecord = _db.Files.FirstOrDefault(file => file.Id == fileId && file.UserId == userId && file.StorageProvider == ActiveStorageProvider) ?? throw new FileNotFoundException();
+        var fileUrl = await _fileStorage.GetFileUrlAsync(fileRecord.StorageKey, TimeSpan.FromMinutes(10), fileRecord.OriginalFileName);
+        return new DownloadLinkDto
+        {
+            Url = fileUrl
+        };
+    }
+
     public async Task<bool> DeleteFileAsync(Guid fileId, Guid userId)
     {
         var fileRecord = await _db.Files.FirstOrDefaultAsync(file => file.Id == fileId && file.UserId == userId && file.StorageProvider == ActiveStorageProvider);
