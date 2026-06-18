@@ -84,7 +84,7 @@ public class FileController : ControllerBase
         }
     }
 
-    [HttpPut("download-link/{id}")]
+    [HttpGet("download-link/{id}")]
     public async Task<ActionResult<DownloadLinkDto>> GetDownloadLink(Guid id)
     {
         try
@@ -119,8 +119,4 @@ public class FileController : ControllerBase
         }
     }
 
-}
-
-public interface IActionResult<T>
-{
 }
