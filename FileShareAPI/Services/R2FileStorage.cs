@@ -53,5 +53,18 @@ public class R2FileStorage : IFileStorage
         await _client.DeleteObjectAsync(_bucketName, storageKey);
     }
 
-
+    public Task<string> GetFileUrlAsync(string storageKey, TimeSpan expiration, string fileName)
+    {
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = _bucketName,
+            Key = storageKey,
+            Expires = DateTime.UtcNow.Add(expiration),
+            ResponseHeaderOverrides = new ResponseHeaderOverrides
+            {
+                ContentDisposition = $"attachment; filename=\"{fileName}\""
+            }
+        };
+        return Task.FromResult(_client.GetPreSignedURL(request));
+    }
 }
