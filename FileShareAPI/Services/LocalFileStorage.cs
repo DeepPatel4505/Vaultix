@@ -56,4 +56,8 @@ public class LocalFileStorage : IFileStorage
         }
     }
 
+    public Task<string> GetFileUrlAsync(string storageKey, TimeSpan expiration, string fileName)
+    {
+        throw new NotImplementedException();
+    }
 }
