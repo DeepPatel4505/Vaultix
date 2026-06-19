@@ -122,4 +122,35 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
         var result = _fileStorage.GenerateUploadLinkAsync(request.FileName ?? "upload", request.ContentType ?? "application/octet-stream", request.Size ?? 0, TimeSpan.FromMinutes(10));
         return result;
     }
+
+    
+    public async Task<FileResponseDto> CompleteUploadAsync(CompleteUploadRequestDto request, Guid userId)
+    {
+        var storagePath = request.StorageKey+ Path.GetExtension(request.FileName ?? "file");
+        var metadata = await _fileStorage.GetFileMetadataAsync(storagePath) ?? throw new FileNotFoundException("File not found in storage");
+
+        var fileRecord = new FileRecord
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            OriginalFileName = request.FileName ?? "file",
+            StorageProvider = ActiveStorageProvider,
+            StorageKey = metadata.StorageKey,
+            ContentType = metadata.ContentType,
+            Size = metadata.Size,
+            UploadedAt = DateTime.UtcNow
+        };
+
+        _db.Files.Add(fileRecord);
+        await _db.SaveChangesAsync();
+
+
+        return new FileResponseDto(
+            Id: fileRecord.Id,
+            FileName: fileRecord.OriginalFileName,
+            Size: fileRecord.Size,
+            DownloadCount: fileRecord.DownloadCount,
+            UploadedAt: fileRecord.UploadedAt
+        );
+    }
 }

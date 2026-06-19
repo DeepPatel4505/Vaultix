@@ -128,4 +128,11 @@ public class FileController : ControllerBase
         }
     }
 
+    [HttpPost("complete")]
+    public async Task<ActionResult<FileResponseDto>> CompleteUpload(CompleteUploadRequestDto request)
+    {
+        var userId = GetCurrentUserId();
+        var fileRecord = await _fileService.CompleteUploadAsync(request, userId);
+        return Ok(fileRecord);
+    }
 }

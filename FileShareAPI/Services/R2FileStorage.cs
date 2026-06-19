@@ -87,4 +87,21 @@ public class R2FileStorage : IFileStorage
             StorageKey: storageKey
         ));
     }
+
+    public Task<MetadataDto> GetFileMetadataAsync(string storageKey)
+    {
+        var request = new GetObjectMetadataRequest
+        {
+            BucketName = _bucketName,
+            Key = storageKey
+        };
+
+        var response = _client.GetObjectMetadataAsync(request).Result;
+
+        return Task.FromResult(new MetadataDto(
+            StorageKey: storageKey,
+            ContentType: response.Headers.ContentType,
+            Size: response.Headers.ContentLength
+        ));
+    }
 }

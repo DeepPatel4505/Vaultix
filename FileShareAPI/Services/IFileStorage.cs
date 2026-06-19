@@ -6,6 +6,7 @@ namespace FileShareAPI.Services;
 public interface IFileStorage
 {
     StorageProvider StorageProvider { get; }
+    Task<MetadataDto> GetFileMetadataAsync(string storageKey);
     Task<StorageUploadResultDto> UploadAsync(IFormFile file);
     Task<UploadLinkResponseDto> GenerateUploadLinkAsync(string fileName, string contentType, long size, TimeSpan expiration);
     Task<Stream> GetFileAsync(string storageKey);
