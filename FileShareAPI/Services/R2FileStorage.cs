@@ -67,4 +67,24 @@ public class R2FileStorage : IFileStorage
         };
         return Task.FromResult(_client.GetPreSignedURL(request));
     }
+
+    public Task<UploadLinkResponseDto> GenerateUploadLinkAsync(string fileName, string contentType, long size, TimeSpan expiration)
+    {
+        var storageKey = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
+
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = _bucketName,
+            Key = storageKey,
+            Verb = HttpVerb.PUT,
+            Expires = DateTime.UtcNow.Add(expiration),
+        };
+
+        var uploadUrl = _client.GetPreSignedURL(request);
+
+        return Task.FromResult(new UploadLinkResponseDto(
+            UploadUrl: uploadUrl,
+            StorageKey: storageKey
+        ));
+    }
 }
