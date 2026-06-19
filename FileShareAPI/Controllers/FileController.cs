@@ -47,6 +47,15 @@ public class FileController : ControllerBase
         return Ok(fileRecord);
     }
 
+    [HttpPost("upload-link")]
+    public async Task<IActionResult> UploadLink(UploadLinkRequestDto request)
+    {
+        var userId = GetCurrentUserId();
+
+        var result = await _fileService.GenerateUploadLinkAsync(request, userId);
+        return Ok(result);
+    }
+
     [HttpGet]
     public async Task<ActionResult<List<FileListDto>>> GetFiles()
     {

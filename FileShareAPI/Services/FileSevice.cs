@@ -112,4 +112,14 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
         return true;
     }
 
+    public Task<UploadLinkResponseDto> GenerateUploadLinkAsync(UploadLinkRequestDto request, Guid userId)
+    {
+        if (request.Size.HasValue && request.Size.Value > 500 * 1024 * 1024) // 500 MB limit
+        {
+            throw new InvalidOperationException($"File too large");
+        }
+
+        var result = _fileStorage.GenerateUploadLinkAsync(request.FileName ?? "upload", request.ContentType ?? "application/octet-stream", request.Size ?? 0, TimeSpan.FromMinutes(10));
+        return result;
+    }
 }
