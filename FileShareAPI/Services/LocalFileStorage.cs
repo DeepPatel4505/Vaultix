@@ -65,4 +65,9 @@ public class LocalFileStorage : IFileStorage
     {
         throw new NotImplementedException();
     }
+
+    public Task<MetadataDto> GetFileMetadataAsync(string storageKey)
+    {
+        throw new NotImplementedException();
+    }
 }
