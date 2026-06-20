@@ -24,6 +24,7 @@ export const WorkspaceProvider = ({ children }) => {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadStatus, setUploadStatus] = useState("None"); // None, Uploading, Finalizing, Success, Error
     const [uploadFileName, setUploadFileName] = useState("");
+    const [uploadError, setUploadError] = useState("");
 
     // Client-side local storage states for favorites, shared, and trash
     const [favorites, setFavorites] = useState(() => {
@@ -149,11 +150,24 @@ export const WorkspaceProvider = ({ children }) => {
     const uploadFile = async (fileObj) => {
         if (!fileObj) return;
 
+        setUploadFileName(fileObj.name);
+
+        // Early client-side check for 500MB limit
+        if (fileObj.size > 500 * 1024 * 1024) {
+            const sizeLimitError = "File is too large. Maximum size allowed is 500 MB.";
+            setUploadError(sizeLimitError);
+            setUploadStatus("Error");
+            setTimeout(() => {
+                setUploadStatus("None");
+            }, 3000);
+            throw new Error(sizeLimitError);
+        }
+
         try {
             setIsUploading(true);
-            setUploadFileName(fileObj.name);
             setUploadStatus("Uploading");
-            setError("");
+            setUploadError("");
+            
             const response = await api.post("/file/upload-link", {
                 fileName: fileObj.name,
                 contentType: fileObj.type,
@@ -165,7 +179,9 @@ export const WorkspaceProvider = ({ children }) => {
             }
 
             const { uploadUrl, storageKey } = response.data;
-            console.log(`Received upload URL: ${uploadUrl}, Storage Key: ${storageKey}`);
+            console.log(
+                `Received upload URL: ${uploadUrl}, Storage Key: ${storageKey}`,
+            );
 
             // Perform the actual file upload to the provided URL
             await axios.put(uploadUrl, fileObj, {
@@ -183,7 +199,7 @@ export const WorkspaceProvider = ({ children }) => {
             });
 
             setUploadStatus("Finalizing");
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // await new Promise((resolve) => setTimeout(resolve, 1000));
             // Notify the server that the upload is complete (if needed, depending on backend implementation)
             const completeResponse = await api.post(`/file/complete/`, {
                 storageKey,
@@ -202,13 +218,29 @@ export const WorkspaceProvider = ({ children }) => {
         } catch (err) {
             console.error("Upload failed:", err);
             setUploadStatus("Error");
+
+            let message = "Unable to upload file. Please check your connection.";
+            if (err.response) {
+                if (err.response.status === 413) {
+                    message = `File is too large. Maximum size allowed is 500 MB.`;
+                } else if (err.response.data && err.response.data.message) {
+                    message = err.response.data.message;
+                } else {
+                    message = `Server error (${err.response.status}). Please try again.`;
+                }
+            } else if (err.request) {
+                message = "Network error. Please check your internet connection.";
+            } else if (err.message) {
+                message = err.message;
+            }
+
+            setUploadError(message);
+
             setTimeout(() => {
                 setUploadStatus("None");
             }, 3000);
-            setError(
-                "Unable to upload file. Please check file size and connection.",
-            );
-            throw err;
+
+            throw new Error(message);
         } finally {
             setIsUploading(false);
             setUploadProgress(0);
@@ -239,6 +271,7 @@ export const WorkspaceProvider = ({ children }) => {
         uploadStatus,
         uploadProgress,
         uploadFileName,
+        uploadError,
         uploadFile,
         refreshFiles: fetchFiles,
     };

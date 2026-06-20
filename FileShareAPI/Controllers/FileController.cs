@@ -51,9 +51,19 @@ public class FileController : ControllerBase
     public async Task<ActionResult<UploadLinkResponseDto>> UploadLink(UploadLinkRequestDto request)
     {
         var userId = GetCurrentUserId();
-
-        var result = await _fileService.GenerateUploadLinkAsync(request, userId);
-        return Ok(result);
+        try
+        {
+            var result = await _fileService.GenerateUploadLinkAsync(request, userId);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status413PayloadTooLarge, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
     }
 
     [HttpGet]
