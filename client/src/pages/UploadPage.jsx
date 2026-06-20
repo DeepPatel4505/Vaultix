@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useWorkspace } from "../context/WorkspaceContext";
 
 const UploadPage = () => {
-    const { uploadFile, isUploading: contextUploading, uploadProgress, uploadStatus } = useWorkspace();
+    const { uploadFile, isUploading: contextUploading, uploadProgress, uploadStatus, uploadError } = useWorkspace();
     const [selectedFile, setSelectedFile] = useState(null);
     const [isLocalUploading, setIsLocalUploading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -32,7 +32,7 @@ const UploadPage = () => {
             setSelectedFile(null);
         } catch (uploadError) {
             console.error("Upload failed in page:", uploadError);
-            setError("Unable to upload the file. Please check your network and file size.");
+            // Error is displayed inside the upload progress box; no general form-level alert needed.
         } finally {
             setIsLocalUploading(false);
         }
@@ -196,22 +196,19 @@ const UploadPage = () => {
                                             <p className="truncate text-sm font-bold text-ink leading-tight" title={selectedFile.name}>
                                                 {selectedFile.name}
                                             </p>
-                                            <p className="text-xs text-muted-soft mt-1 font-mono">
-                                                {getFileDisplaySize(selectedFile.size)}
-                                            </p>
+                                            {uploadStatus === "Error" ? (
+                                                <p className="text-xs text-error font-medium mt-1.5 flex items-start gap-1">
+                                                    <span className="shrink-0">⚠️</span>
+                                                    <span>{uploadError || "Failed to upload"}</span>
+                                                </p>
+                                            ) : (
+                                                <p className="text-xs text-muted-soft mt-1 font-mono">
+                                                    {getFileDisplaySize(selectedFile.size)}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
-                                    {!isUploading ? (
-                                        <button
-                                            onClick={clearSelectedFile}
-                                            aria-label="Remove chosen file"
-                                            className="rounded p-1.5 text-muted hover:bg-surface-soft hover:text-error transition-colors cursor-pointer"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    ) : (
+                                    <div className="flex items-center gap-2">
                                         <div className="flex items-center gap-1.5">
                                             {uploadStatus === "Uploading" && (
                                                 <span className="text-xs font-semibold text-muted shrink-0 font-mono">
@@ -228,13 +225,20 @@ const UploadPage = () => {
                                                     ✓ Done
                                                 </span>
                                             )}
-                                            {uploadStatus === "Error" && (
-                                                <span className="text-xs font-semibold text-error shrink-0 flex items-center gap-1">
-                                                    ⚠️ Failed
-                                                </span>
-                                            )}
                                         </div>
-                                    )}
+
+                                        {!isUploading && (
+                                            <button
+                                                onClick={clearSelectedFile}
+                                                aria-label="Remove chosen file"
+                                                className="rounded p-1.5 text-muted hover:bg-surface-soft hover:text-error transition-colors cursor-pointer"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                                 {isUploading && (uploadStatus === "Uploading" || uploadStatus === "Finalizing") && (
                                     <div className="w-full">

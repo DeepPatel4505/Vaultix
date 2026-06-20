@@ -21,6 +21,7 @@ const Layout = () => {
         uploadProgress,
         uploadStatus,
         uploadFileName,
+        uploadError,
         error,
         setError,
     } = useWorkspace();
@@ -134,6 +135,19 @@ const Layout = () => {
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
+    const formatFileName = (name) => {
+        if (!name) return "file";
+        const maxLen = 22; // Maximum length before trimming
+        if (name.length <= maxLen) return name;
+        const lastDot = name.lastIndexOf(".");
+        if (lastDot !== -1 && name.length - lastDot <= 6) {
+            const ext = name.substring(lastDot);
+            const base = name.substring(0, lastDot);
+            return `${base.substring(0, maxLen - ext.length - 3)}...${ext}`;
+        }
+        return `${name.substring(0, maxLen - 3)}...`;
     };
 
     const userInitial = user ? user.substring(0, 1).toUpperCase() : "U";
@@ -474,7 +488,7 @@ const Layout = () => {
             </div>
 
             {/* Global Floating Upload Progress Widget */}
-            {showProgressWidget && uploadStatus !== "None" && (
+            {showProgressWidget && uploadStatus !== "None" && location.pathname !== "/upload" && (
                 <div className="fixed bottom-6 right-6 z-50 w-80 rounded-xl border border-hairline bg-surface-card shadow-2xl p-4 flex flex-col gap-3 select-none animate-slide-in-right transition-all">
                     {/* Header */}
                     <div className="flex items-center justify-between">
@@ -517,13 +531,13 @@ const Layout = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-ink leading-tight" title={uploadFileName}>
-                                {uploadFileName || "file"}
+                                {formatFileName(uploadFileName)}
                             </p>
-                            <p className="text-[10px] text-muted-soft mt-1">
+                            <p className="text-[10px] text-muted-soft mt-1 leading-snug">
                                 {uploadStatus === "Uploading" && `Progress: ${uploadProgress}%`}
                                 {uploadStatus === "Finalizing" && "Processing on server..."}
                                 {uploadStatus === "Success" && "Saved to vault"}
-                                {uploadStatus === "Error" && "Failed to save file"}
+                                {uploadStatus === "Error" && (uploadError || "Failed to save file")}
                             </p>
                         </div>
                     </div>
