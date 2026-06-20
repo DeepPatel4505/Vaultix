@@ -70,12 +70,13 @@ public class R2FileStorage : IFileStorage
 
     public Task<UploadLinkResponseDto> GenerateUploadLinkAsync(string fileName, string contentType, long size, TimeSpan expiration)
     {
-        var storageKey = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
+        var storageKey = $"{Guid.NewGuid()}";
+        var fileNameWithPath = storageKey + Path.GetExtension(fileName ?? "file");
 
         var request = new GetPreSignedUrlRequest
         {
             BucketName = _bucketName,
-            Key = storageKey,
+            Key = fileNameWithPath,
             Verb = HttpVerb.PUT,
             Expires = DateTime.UtcNow.Add(expiration),
         };
