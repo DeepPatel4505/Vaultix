@@ -48,7 +48,7 @@ public class FileController : ControllerBase
     }
 
     [HttpPost("upload-link")]
-    public async Task<IActionResult> UploadLink(UploadLinkRequestDto request)
+    public async Task<ActionResult<UploadLinkResponseDto>> UploadLink(UploadLinkRequestDto request)
     {
         var userId = GetCurrentUserId();
 
@@ -108,7 +108,7 @@ public class FileController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<ActionResult> Delete(Guid id)
     {
 
         try
