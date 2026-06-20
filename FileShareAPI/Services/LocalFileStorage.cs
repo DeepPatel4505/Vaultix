@@ -60,4 +60,14 @@ public class LocalFileStorage : IFileStorage
     {
         throw new NotImplementedException();
     }
+
+    public Task<UploadLinkResponseDto> GenerateUploadLinkAsync(string fileName, string contentType, long size, TimeSpan expiration)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<MetadataDto> GetFileMetadataAsync(string storageKey)
+    {
+        throw new NotImplementedException();
+    }
 }
