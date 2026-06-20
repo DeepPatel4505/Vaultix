@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { useWorkspace } from "../context/WorkspaceContext";
 
 const UploadPage = () => {
-    const { uploadFile, isUploading: contextUploading } = useWorkspace();
+    const { uploadFile, isUploading: contextUploading, uploadProgress, uploadStatus } = useWorkspace();
     const [selectedFile, setSelectedFile] = useState(null);
     const [isLocalUploading, setIsLocalUploading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -129,11 +129,11 @@ const UploadPage = () => {
 
                 {/* Drag and Drop Box */}
                 <div
-                    onDragEnter={handleDragEnter}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={triggerFileSelect}
+                    onDragEnter={isUploading ? undefined : handleDragEnter}
+                    onDragOver={isUploading ? undefined : handleDragOver}
+                    onDragLeave={isUploading ? undefined : handleDragLeave}
+                    onDrop={isUploading ? undefined : handleDrop}
+                    onClick={isUploading ? undefined : triggerFileSelect}
                     className={`
                         relative
                         flex
@@ -147,10 +147,11 @@ const UploadPage = () => {
                         text-center
                         transition-all
                         duration-150
-                        cursor-pointer
-                        ${isDragging 
-                            ? "border-ink bg-surface-soft scale-[1.005]" 
-                            : "border-hairline bg-canvas hover:border-muted hover:bg-surface-soft"
+                        ${isUploading
+                            ? "border-hairline bg-surface-soft/60 cursor-not-allowed"
+                            : isDragging 
+                                ? "border-ink bg-surface-soft scale-[1.005] cursor-pointer" 
+                                : "border-hairline bg-canvas hover:border-muted hover:bg-surface-soft cursor-pointer"
                         }
                     `}
                 >
@@ -187,27 +188,68 @@ const UploadPage = () => {
                                 </svg>
                             </div>
 
-                            <div className="rounded border border-hairline bg-canvas p-3.5 text-left flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <span className="text-lg shrink-0 select-none">📄</span>
-                                    <div className="min-w-0">
-                                        <p className="truncate text-sm font-bold text-ink leading-tight" title={selectedFile.name}>
-                                            {selectedFile.name}
-                                        </p>
-                                        <p className="text-xs text-muted-soft mt-1 font-mono">
-                                            {getFileDisplaySize(selectedFile.size)}
-                                        </p>
+                            <div className="rounded border border-hairline bg-canvas p-3.5 text-left flex flex-col gap-3">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <span className="text-lg shrink-0 select-none">📄</span>
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-bold text-ink leading-tight" title={selectedFile.name}>
+                                                {selectedFile.name}
+                                            </p>
+                                            <p className="text-xs text-muted-soft mt-1 font-mono">
+                                                {getFileDisplaySize(selectedFile.size)}
+                                            </p>
+                                        </div>
                                     </div>
+                                    {!isUploading ? (
+                                        <button
+                                            onClick={clearSelectedFile}
+                                            aria-label="Remove chosen file"
+                                            className="rounded p-1.5 text-muted hover:bg-surface-soft hover:text-error transition-colors cursor-pointer"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    ) : (
+                                        <div className="flex items-center gap-1.5">
+                                            {uploadStatus === "Uploading" && (
+                                                <span className="text-xs font-semibold text-muted shrink-0 font-mono">
+                                                    {uploadProgress}%
+                                                </span>
+                                            )}
+                                            {uploadStatus === "Finalizing" && (
+                                                <span className="text-xs font-semibold text-primary shrink-0 animate-pulse">
+                                                    Finalizing…
+                                                </span>
+                                            )}
+                                            {uploadStatus === "Success" && (
+                                                <span className="text-xs font-semibold text-success shrink-0 flex items-center gap-1">
+                                                    ✓ Done
+                                                </span>
+                                            )}
+                                            {uploadStatus === "Error" && (
+                                                <span className="text-xs font-semibold text-error shrink-0 flex items-center gap-1">
+                                                    ⚠️ Failed
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                                <button
-                                    onClick={clearSelectedFile}
-                                    aria-label="Remove chosen file"
-                                    className="rounded p-1.5 text-muted hover:bg-surface-soft hover:text-error transition-colors cursor-pointer"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
+                                {isUploading && (uploadStatus === "Uploading" || uploadStatus === "Finalizing") && (
+                                    <div className="w-full">
+                                        <div className="h-1.5 w-full bg-surface-soft border border-hairline/60 rounded-full overflow-hidden relative">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-300 ${
+                                                    uploadStatus === "Finalizing" 
+                                                        ? "bg-primary animate-pulse w-full" 
+                                                        : "bg-primary"
+                                                }`}
+                                                style={{ width: uploadStatus === "Finalizing" ? "100%" : `${uploadProgress}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext, useMemo } from "react";
 import api from "../lib/api";
+import axios from "axios";
 
 const WorkspaceContext = createContext(null);
 
@@ -19,6 +20,10 @@ export const WorkspaceProvider = ({ children }) => {
     const [activeView, setActiveView] = useState("workspace"); // workspace, shared, favorites, trash
     const [selectedFile, setSelectedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
+
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadStatus, setUploadStatus] = useState("None"); // None, Uploading, Finalizing, Success, Error
+    const [uploadFileName, setUploadFileName] = useState("");
 
     // Client-side local storage states for favorites, shared, and trash
     const [favorites, setFavorites] = useState(() => {
@@ -52,6 +57,7 @@ export const WorkspaceProvider = ({ children }) => {
     // Fetch active files
     const fetchFiles = async () => {
         try {
+            setIsLoading(true);
             setError("");
             const response = await api.get("/file");
             setFilesMeta(response.data);
@@ -78,13 +84,17 @@ export const WorkspaceProvider = ({ children }) => {
     // Helper functions for action mappings
     const toggleFavorite = (id) => {
         setFavorites((prev) =>
-            prev.includes(id) ? prev.filter((fid) => fid !== id) : [...prev, id]
+            prev.includes(id)
+                ? prev.filter((fid) => fid !== id)
+                : [...prev, id],
         );
     };
 
     const toggleShared = (id) => {
         setShared((prev) =>
-            prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
+            prev.includes(id)
+                ? prev.filter((sid) => sid !== id)
+                : [...prev, id],
         );
     };
 
@@ -92,7 +102,7 @@ export const WorkspaceProvider = ({ children }) => {
         if (!file) return;
         // Don't duplicate trash items
         if (trashList.some((item) => item.id === file.id)) return;
-        
+
         setTrashList((prev) => [
             ...prev,
             {
@@ -115,13 +125,13 @@ export const WorkspaceProvider = ({ children }) => {
         try {
             setError("");
             await api.delete(`/file/${id}`);
-            
+
             // Remove from local trash state
             setTrashList((prev) => prev.filter((item) => item.id !== id));
-            
+
             // Remove from raw files list
             setFilesMeta((prev) => prev.filter((file) => file.id !== id));
-            
+
             // Cleanup references
             setFavorites((prev) => prev.filter((fid) => fid !== id));
             setShared((prev) => prev.filter((sid) => sid !== id));
@@ -139,27 +149,69 @@ export const WorkspaceProvider = ({ children }) => {
     const uploadFile = async (fileObj) => {
         if (!fileObj) return;
 
-        const formData = new FormData();
-        formData.append("file", fileObj);
-
         try {
             setIsUploading(true);
+            setUploadFileName(fileObj.name);
+            setUploadStatus("Uploading");
             setError("");
-            
-            await api.post("/file", formData, {
+            const response = await api.post("/file/upload-link", {
+                fileName: fileObj.name,
+                contentType: fileObj.type,
+                size: fileObj.size,
+            });
+
+            if (response.status !== 200) {
+                throw new Error("Failed to get upload link from server");
+            }
+
+            const { uploadUrl, storageKey } = response.data;
+            console.log(`Received upload URL: ${uploadUrl}, Storage Key: ${storageKey}`);
+
+            // Perform the actual file upload to the provided URL
+            await axios.put(uploadUrl, fileObj, {
                 headers: {
-                    "Content-Type": "multipart/form-data",
+                    "Content-Type": fileObj.type,
+                },
+                onUploadProgress: (progressEvent) => {
+                    if (!progressEvent.total) return; // Avoid division by zero
+                    const progress = Math.round(
+                        (progressEvent.loaded * 100) / progressEvent.total,
+                    );
+                    setUploadProgress(progress);
+                    console.log(`Upload progress: ${progress}%`);
                 },
             });
-            
-            // Refresh files listing
+
+            setUploadStatus("Finalizing");
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Notify the server that the upload is complete (if needed, depending on backend implementation)
+            const completeResponse = await api.post(`/file/complete/`, {
+                storageKey,
+                fileName: fileObj.name,
+            });
+            if (completeResponse.status !== 200) {
+                throw new Error("Failed to complete upload on server");
+            }
+            // After successful upload, refresh the file list to include the new file
+            setUploadStatus("Success");
+
+            setTimeout(() => {
+                setUploadStatus("None");
+            }, 2000);
             await fetchFiles();
         } catch (err) {
             console.error("Upload failed:", err);
-            setError("Unable to upload file. Please check file size and connection.");
+            setUploadStatus("Error");
+            setTimeout(() => {
+                setUploadStatus("None");
+            }, 3000);
+            setError(
+                "Unable to upload file. Please check file size and connection.",
+            );
             throw err;
         } finally {
             setIsUploading(false);
+            setUploadProgress(0);
         }
     };
 
@@ -184,6 +236,9 @@ export const WorkspaceProvider = ({ children }) => {
         restoreFromTrash,
         deletePermanently,
         isUploading,
+        uploadStatus,
+        uploadProgress,
+        uploadFileName,
         uploadFile,
         refreshFiles: fetchFiles,
     };
