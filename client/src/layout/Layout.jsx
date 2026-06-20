@@ -18,9 +18,21 @@ const Layout = () => {
         setSearchQuery,
         isUploading,
         uploadFile,
+        uploadProgress,
+        uploadStatus,
+        uploadFileName,
+        uploadError,
         error,
         setError,
     } = useWorkspace();
+
+    const [showProgressWidget, setShowProgressWidget] = useState(false);
+
+    useEffect(() => {
+        if (uploadStatus && uploadStatus !== "None") {
+            setShowProgressWidget(true);
+        }
+    }, [uploadStatus]);
 
     const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -123,6 +135,19 @@ const Layout = () => {
         if (bytes < 1024) return `${bytes} B`;
         if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
+    const formatFileName = (name) => {
+        if (!name) return "file";
+        const maxLen = 22; // Maximum length before trimming
+        if (name.length <= maxLen) return name;
+        const lastDot = name.lastIndexOf(".");
+        if (lastDot !== -1 && name.length - lastDot <= 6) {
+            const ext = name.substring(lastDot);
+            const base = name.substring(0, lastDot);
+            return `${base.substring(0, maxLen - ext.length - 3)}...${ext}`;
+        }
+        return `${name.substring(0, maxLen - 3)}...`;
     };
 
     const userInitial = user ? user.substring(0, 1).toUpperCase() : "U";
@@ -461,6 +486,79 @@ const Layout = () => {
                     <Outlet />
                 </main>
             </div>
+
+            {/* Global Floating Upload Progress Widget */}
+            {showProgressWidget && uploadStatus !== "None" && location.pathname !== "/upload" && (
+                <div className="fixed bottom-6 right-6 z-50 w-80 rounded-xl border border-hairline bg-surface-card shadow-2xl p-4 flex flex-col gap-3 select-none animate-slide-in-right transition-all">
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold tracking-wider uppercase text-muted-soft">
+                            {uploadStatus === "Uploading" && "Uploading to Workspace"}
+                            {uploadStatus === "Finalizing" && "Finalizing Upload"}
+                            {uploadStatus === "Success" && "Upload Complete"}
+                            {uploadStatus === "Error" && "Upload Failed"}
+                        </span>
+                        <button
+                            onClick={() => setShowProgressWidget(false)}
+                            className="text-muted hover:text-ink hover:bg-surface-soft p-1 rounded-md transition-colors cursor-pointer"
+                            aria-label="Dismiss progress panel"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {/* File info row */}
+                    <div className="flex items-center gap-3">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border text-lg ${
+                            uploadStatus === "Success"
+                                ? "bg-success/10 border-success/20 text-success"
+                                : uploadStatus === "Error"
+                                    ? "bg-error/10 border-error/20 text-error"
+                                    : "bg-canvas border-hairline text-muted"
+                        }`}>
+                            {uploadStatus === "Uploading" && (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                            )}
+                            {uploadStatus === "Finalizing" && (
+                                <span className="h-4.5 w-4.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            )}
+                            {uploadStatus === "Success" && "✓"}
+                            {uploadStatus === "Error" && "⚠️"}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-ink leading-tight" title={uploadFileName}>
+                                {formatFileName(uploadFileName)}
+                            </p>
+                            <p className="text-[10px] text-muted-soft mt-1 leading-snug">
+                                {uploadStatus === "Uploading" && `Progress: ${uploadProgress}%`}
+                                {uploadStatus === "Finalizing" && "Processing on server..."}
+                                {uploadStatus === "Success" && "Saved to vault"}
+                                {uploadStatus === "Error" && (uploadError || "Failed to save file")}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    {(uploadStatus === "Uploading" || uploadStatus === "Finalizing") && (
+                        <div className="w-full">
+                            <div className="h-1.5 w-full bg-surface-soft border border-hairline/60 rounded-full overflow-hidden relative">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-300 ${
+                                        uploadStatus === "Finalizing" 
+                                            ? "bg-primary animate-pulse w-full" 
+                                            : "bg-primary"
+                                    }`}
+                                    style={{ width: uploadStatus === "Finalizing" ? "100%" : `${uploadProgress}%` }}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

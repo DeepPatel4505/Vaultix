@@ -47,6 +47,25 @@ public class FileController : ControllerBase
         return Ok(fileRecord);
     }
 
+    [HttpPost("upload-link")]
+    public async Task<ActionResult<UploadLinkResponseDto>> UploadLink(UploadLinkRequestDto request)
+    {
+        var userId = GetCurrentUserId();
+        try
+        {
+            var result = await _fileService.GenerateUploadLinkAsync(request, userId);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status413PayloadTooLarge, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
     [HttpGet]
     public async Task<ActionResult<List<FileListDto>>> GetFiles()
     {
@@ -99,7 +118,7 @@ public class FileController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<ActionResult> Delete(Guid id)
     {
 
         try
@@ -119,4 +138,11 @@ public class FileController : ControllerBase
         }
     }
 
+    [HttpPost("complete")]
+    public async Task<ActionResult<FileResponseDto>> CompleteUpload(CompleteUploadRequestDto request)
+    {
+        var userId = GetCurrentUserId();
+        var fileRecord = await _fileService.CompleteUploadAsync(request, userId);
+        return Ok(fileRecord);
+    }
 }
