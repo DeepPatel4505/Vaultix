@@ -11,10 +11,12 @@ namespace FileShareAPI.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IWebHostEnvironment _environment;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IWebHostEnvironment environment)
     {
         _authService = authService;
+        _environment = environment;
     }
 
     [HttpPost("login")]
@@ -22,8 +24,18 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var user = await _authService.LoginUser(loginDetails.Email, loginDetails.Password);
-            return Ok(user);
+            var response = await _authService.LoginUser(loginDetails.Email, loginDetails.Password);
+            var refreshToken = response.RefreshToken;
+
+            Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !_environment.IsDevelopment(),
+                SameSite = _environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)
+            });
+
+            return Ok(response.AuthResponse);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -36,12 +48,21 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var user = await _authService.RegisterUser(
+            var response = await _authService.RegisterUser(
                 registerDetails.Username,
                 registerDetails.Email,
                 registerDetails.Password);
 
-            return Ok(user);
+            var refreshToken = response.RefreshToken;
+            Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !_environment.IsDevelopment(),
+                SameSite = _environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)
+            });
+
+            return Ok(response.AuthResponse);
         }
         catch (InvalidOperationException ex)
         {
