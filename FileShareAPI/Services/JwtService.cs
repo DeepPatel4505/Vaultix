@@ -56,8 +56,8 @@ public class JwtService
         return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
     }   
 
-    public double GetRefreshTokenExpiry()
+    public int GetRefreshTokenExpiry()
     {
-        return _config.GetValue<double>("Jwt:RefreshTokenExpiry");
+        return _config.GetValue<int>("Jwt:RefreshTokenExpiry");
     }
 }
