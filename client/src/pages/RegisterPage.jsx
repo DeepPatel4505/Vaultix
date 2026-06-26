@@ -45,7 +45,7 @@ const RegisterPage = () => {
                 password,
             });
 
-            register(response.data, response.data.token);
+            register(response.data.username, response.data.accessToken);
             navigate("/files");
         } catch (registerError) {
             const message =
