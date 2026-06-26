@@ -70,7 +70,7 @@ const PREVIEW_FILES = [
 ];
 
 const LandingPage = () => {
-    const { token } = useAuth();
+    const { token, loading } = useAuth();
     const navigate = useNavigate();
     const [copied, setCopied] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -187,7 +187,9 @@ const LandingPage = () => {
                             )}
                         </button>
 
-                        {token ? (
+                        {loading ? (
+                            <div className="h-8 w-24 bg-surface-soft animate-pulse rounded-md" />
+                        ) : token ? (
                             <Link
                                 to="/files"
                                 className="rounded-md bg-primary px-4 py-2 text-xs font-semibold text-on-primary hover:bg-primary-hover transition-colors shadow-sm cursor-pointer"
@@ -234,12 +236,16 @@ const LandingPage = () => {
                         </p>
 
                         <div className="flex flex-wrap items-center gap-3.5 pt-2">
-                            <Link
-                                to={token ? "/files" : "/register"}
-                                className="rounded-md bg-primary px-6 py-3 text-xs font-semibold text-on-primary hover:bg-primary-hover transition-all focus-visible:ring-2 focus-visible:ring-primary active:scale-98 cursor-pointer shadow-md"
-                            >
-                                Get Started Free
-                            </Link>
+                            {loading ? (
+                                <div className="h-10.5 w-36 bg-surface-soft animate-pulse rounded-md" />
+                            ) : (
+                                <Link
+                                    to={token ? "/files" : "/register"}
+                                    className="rounded-md bg-primary px-6 py-3 text-xs font-semibold text-on-primary hover:bg-primary-hover transition-all focus-visible:ring-2 focus-visible:ring-primary active:scale-98 cursor-pointer shadow-md"
+                                >
+                                    {token ? "Go to Workspace" : "Get Started Free"}
+                                </Link>
+                            )}
                             <a
                                 href="#features"
                                 className="rounded-md border border-hairline bg-canvas px-6 py-3 text-xs font-semibold text-ink hover:bg-surface-soft transition-all active:scale-98 cursor-pointer"
@@ -545,12 +551,16 @@ const LandingPage = () => {
                                 </ul>
                             </div>
 
-                            <Link
-                                to={token ? "/files" : "/register"}
-                                className="rounded-md border border-hairline bg-canvas py-2.5 text-center text-xs font-semibold text-ink hover:bg-surface-soft transition-colors mt-8 select-none focus-visible:ring-2 focus-visible:ring-primary block cursor-pointer"
-                            >
-                                Sign Up Free
-                            </Link>
+                            {loading ? (
+                                <div className="h-9 w-full bg-surface-soft animate-pulse rounded-md mt-8" />
+                            ) : (
+                                <Link
+                                    to={token ? "/files" : "/register"}
+                                    className="rounded-md border border-hairline bg-canvas py-2.5 text-center text-xs font-semibold text-ink hover:bg-surface-soft transition-colors mt-8 select-none focus-visible:ring-2 focus-visible:ring-primary block cursor-pointer"
+                                >
+                                    {token ? "Go to Workspace" : "Sign Up Free"}
+                                </Link>
+                            )}
                         </div>
 
                         {/* Pro Tier (Featured Inverted Dark Surface!) */}
@@ -572,12 +582,16 @@ const LandingPage = () => {
                                 </ul>
                             </div>
 
-                            <Link
-                                to={token ? "/files" : "/register"}
-                                className="rounded-md bg-white py-2.5 text-center text-xs font-semibold text-black hover:bg-zinc-200 transition-colors mt-8 select-none focus-visible:ring-2 focus-visible:ring-white block cursor-pointer"
-                            >
-                                Start Pro Trial
-                            </Link>
+                            {loading ? (
+                                <div className="h-9 w-full bg-zinc-800 animate-pulse rounded-md mt-8" />
+                            ) : (
+                                <Link
+                                    to={token ? "/files" : "/register"}
+                                    className="rounded-md bg-white py-2.5 text-center text-xs font-semibold text-black hover:bg-zinc-200 transition-colors mt-8 select-none focus-visible:ring-2 focus-visible:ring-white block cursor-pointer"
+                                >
+                                    {token ? "Go to Workspace" : "Start Pro Trial"}
+                                </Link>
+                            )}
                         </div>
 
                         {/* Enterprise Tier */}
@@ -615,12 +629,16 @@ const LandingPage = () => {
                     <p className="text-sm text-muted mb-8 max-w-md mx-auto">
                         Join developers and creative designers in managing and sharing files in a beautiful, minimal digital workspace.
                     </p>
-                    <Link
-                        to={token ? "/files" : "/register"}
-                        className="rounded-md bg-primary px-6 py-3 text-xs font-semibold text-on-primary hover:bg-primary-hover transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-primary cursor-pointer inline-block"
-                    >
-                        Create Your Workspace
-                    </Link>
+                    {loading ? (
+                        <div className="h-10 w-44 bg-surface-soft animate-pulse rounded-md mx-auto" />
+                    ) : (
+                        <Link
+                            to={token ? "/files" : "/register"}
+                            className="rounded-md bg-primary px-6 py-3 text-xs font-semibold text-on-primary hover:bg-primary-hover transition-colors shadow-sm focus-visible:ring-2 focus-visible:ring-primary cursor-pointer inline-block"
+                        >
+                            {token ? "Go to Workspace" : "Create Your Workspace"}
+                        </Link>
+                    )}
                 </div>
             </section>
 
