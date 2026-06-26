@@ -1,7 +1,7 @@
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using FileShareAPI.Dtos;
 using FileShareAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -119,11 +119,11 @@ public class AuthController : ControllerBase
         return Ok();
     }
 
+    [Authorize]
     [HttpGet("me")]
-    public async Task<IActionResult> GetCurrentUser()
+    public async Task<IActionResult> GetCurrentuser()
     {
-        var userIdClaim = User.FindFirstValue(
-        JwtRegisteredClaimNames.Sub);
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (userIdClaim is null)
         {
