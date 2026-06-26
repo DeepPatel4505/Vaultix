@@ -18,7 +18,7 @@ const LoginPage = () => {
         try {
             const response = await api.post("/auth/login", { email, password });
             if (response.status === 200) {
-                login(response.data.username, response.data.token);
+                login(response.data.username, response.data.accessToken);
                 navigate("/files");
             } else {
                 setError(response.data.message || "Login failed");
