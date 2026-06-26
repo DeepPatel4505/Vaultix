@@ -93,6 +93,48 @@ public class AuthService : IAuthService
         );
     }
 
+    public async Task<RefreshResponseDto> RefreshToken(string refreshToken)
+    {
+        var hashedToken = HashToken(refreshToken);
+        var tokenEntity = await _db.RefreshTokens.FirstOrDefaultAsync(rt => rt.TokenHash == hashedToken) ?? throw new UnauthorizedAccessException();
+
+
+        if (tokenEntity == null || tokenEntity.ExpiresAt < DateTime.UtcNow)
+        {
+            throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+        }
+        var user = await _db.Users.FindAsync(tokenEntity.UserId) ?? throw new UnauthorizedAccessException();
+
+        var newAccessToken = _jwtService.GenerateAccessToken(user);
+        var newRefreshToken = _jwtService.GenerateRefreshToken();
+        var newRefreshExpiresAt = _jwtService.GetRefreshTokenExpiry();
+
+        tokenEntity.TokenHash = HashToken(newRefreshToken);
+        tokenEntity.ExpiresAt = DateTime.UtcNow.AddMinutes(newRefreshExpiresAt);
+
+        await _db.SaveChangesAsync();
+
+        return new RefreshResponseDto(
+            newAccessToken,
+            newRefreshToken,
+            newRefreshExpiresAt
+        );
+    }
+
+    public async Task<UserDto> GetCurrentUser(
+    Guid userId)
+    {
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new UnauthorizedAccessException();
+
+        return new UserDto(
+            user.Id,
+            user.Username,
+            user.Email
+        );
+    }
+
     private static string HashToken(string token)
     {
         using var sha = SHA256.Create();

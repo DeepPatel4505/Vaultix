@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using FileShareAPI.Dtos;
 using FileShareAPI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -68,6 +70,59 @@ public class AuthController : ControllerBase
         {
             return Conflict(ex.Message);
         }
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh()
+    {
+        var refreshToken =
+            Request.Cookies["refreshToken"];
+
+        if (string.IsNullOrEmpty(refreshToken))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var response =
+                await _authService.RefreshToken(refreshToken);
+
+            Response.Cookies.Append("refreshToken", response.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !_environment.IsDevelopment(),
+                SameSite = _environment.IsDevelopment()
+        ? SameSiteMode.Lax
+        : SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)
+            });
+
+
+            return Ok(response.AccessToken);
+        }
+        catch
+        {
+            return Unauthorized();
+        }
+    }
+
+    [HttpGet("me")]
+    public async Task<IActionResult> GetCurrentUser()
+    {
+        var userIdClaim = User.FindFirstValue(
+        JwtRegisteredClaimNames.Sub);
+
+        if (userIdClaim is null)
+        {
+            return Unauthorized();
+        }
+
+        var user = await _authService.GetCurrentUser(
+            Guid.Parse(userIdClaim)
+        );
+
+        return Ok(user);
     }
 
 }
