@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import api from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
 
 const RegisterPage = () => {
@@ -39,13 +38,7 @@ const RegisterPage = () => {
         setError("");
 
         try {
-            const response = await api.post("/auth/register", {
-                username,
-                email,
-                password,
-            });
-
-            register(response.data.username, response.data.accessToken);
+            await register(username, email, password);
             navigate("/files");
         } catch (registerError) {
             const message =

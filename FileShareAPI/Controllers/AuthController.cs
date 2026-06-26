@@ -101,10 +101,22 @@ public class AuthController : ControllerBase
 
             return Ok(response.AccessToken);
         }
-        catch
+        catch(Exception ex)
         {
-            return Unauthorized();
+            return Unauthorized(ex.Message);
         }
+    }
+
+    [HttpPost("logout")]
+    public IActionResult Logout()
+    {
+        Response.Cookies.Delete("refreshToken", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = !_environment.IsDevelopment(),
+            SameSite = _environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None
+        });
+        return Ok();
     }
 
     [HttpGet("me")]

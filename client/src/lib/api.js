@@ -7,11 +7,16 @@ const api = axios.create({
 
 api.withCredentials = true;
 
+let authToken = null;
+
+export const setAuthToken = (token) => {
+    authToken = token;
+};
+
 api.interceptors.request.use(
     (config) => {
-        const token = window.localStorage.getItem("token");
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        if (authToken) {
+            config.headers.Authorization = `Bearer ${authToken}`;
         }
         return config;
     },
@@ -36,11 +41,12 @@ export const setupInterceptors = (onTokenRefreshed, onLogout) => {
             const originalRequest = error.config;
 
             if (error.response && error.response.status === 401 && !originalRequest._retry) {
-                // If it's already a refresh request or a login/register request, do not retry
+                // If it's already a refresh request or a login/register/logout request, do not retry
                 if (
                     originalRequest.url.includes("/auth/refresh") ||
                     originalRequest.url.includes("/auth/login") ||
-                    originalRequest.url.includes("/auth/register")
+                    originalRequest.url.includes("/auth/register") ||
+                    originalRequest.url.includes("/auth/logout")
                 ) {
                     return Promise.reject(error);
                 }
@@ -52,21 +58,27 @@ export const setupInterceptors = (onTokenRefreshed, onLogout) => {
                         .post("/auth/refresh")
                         .then((res) => {
                             refreshPromise = null;
-                            return res.data.accessToken;
+                            const accessToken = typeof res.data === "string" ? res.data : res.data.accessToken;
+                            setAuthToken(accessToken);
+                            if (onTokenRefreshed) {
+                                onTokenRefreshed(accessToken);
+                            }
+                            return accessToken;
                         })
                         .catch((err) => {
                             refreshPromise = null;
+                            if (onLogout) {
+                                onLogout();
+                            }
                             throw err;
                         });
                 }
 
                 try {
                     const accessToken = await refreshPromise;
-                    onTokenRefreshed(accessToken);
                     originalRequest.headers.Authorization = `Bearer ${accessToken}`;
                     return api(originalRequest);
                 } catch (refreshError) {
-                    onLogout();
                     return Promise.reject(refreshError);
                 }
             }

@@ -1,7 +1,5 @@
-import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import api from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
 
 const LoginPage = () => {
@@ -16,16 +14,11 @@ const LoginPage = () => {
         setError("");
 
         try {
-            const response = await api.post("/auth/login", { email, password });
-            if (response.status === 200) {
-                login(response.data.username, response.data.accessToken);
-                navigate("/files");
-            } else {
-                setError(response.data.message || "Login failed");
-            }
+            await login(email, password);
+            navigate("/files");
         } catch (err) {
             console.error("Login request error:", err);
-            setError(err.response?.data?.message || err.response?.data || "Unable to sign in. Please verify your credentials.");
+            setError(err.response?.data?.title || err.response?.data || "Unable to sign in. Please verify your credentials.");
         }
     };
 
