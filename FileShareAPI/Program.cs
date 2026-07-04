@@ -12,6 +12,8 @@ using FileShareAPI.Options;
 using Amazon.S3;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -71,6 +73,53 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+// Configure Rate Limiting
+var rateLimitSettings = builder.Configuration
+    .GetSection(AuthRateLimitOptions.Position)
+    .Get<AuthRateLimitOptions>() ?? new AuthRateLimitOptions();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers.RetryAfter = 
+                ((int)retryAfter.TotalSeconds).ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
+        }
+        else
+        {
+            context.HttpContext.Response.Headers.RetryAfter = rateLimitSettings.WindowSeconds.ToString();
+        }
+
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            error = "Too many requests. Please try again later.",
+            retryAfterSeconds = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var delay) 
+                ? (int)delay.TotalSeconds 
+                : rateLimitSettings.WindowSeconds
+        }, cancellationToken);
+    };
+
+    options.AddPolicy("AuthRateLimit", context =>
+    {
+        // Partition by remote client IP address
+        var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: clientIp,
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = rateLimitSettings.PermitLimit,
+                Window = TimeSpan.FromSeconds(rateLimitSettings.WindowSeconds),
+                QueueLimit = rateLimitSettings.QueueLimit,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            });
+    });
+});
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")
@@ -79,6 +128,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 
 var allowedOrigins =
     builder.Configuration
@@ -139,10 +189,13 @@ if (app.Environment.IsDevelopment())
         .AddPreferredSecuritySchemes("Bearer")
         .EnablePersistentAuthentication());
 }
+app.UseRouting();
 app.UseCors("AllowFrontend");
 
 // Middleware - this will redirect HTTP requests to HTTPS
 app.UseHttpsRedirection();
+
+app.UseRateLimiter();
 
 // Authorization middleware - this will check if the user is authorized to access the endpoint
 app.UseAuthentication();

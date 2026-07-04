@@ -101,7 +101,7 @@ public class R2FileStorage : IFileStorage
 
         return Task.FromResult(new MetadataDto(
             StorageKey: storageKey,
-            ContentType: response.Headers.ContentType,
+            ContentType: response.Headers.ContentType ?? "application/octet-stream",
             Size: response.Headers.ContentLength
         ));
     }

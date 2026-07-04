@@ -3,6 +3,7 @@ using FileShareAPI.Dtos;
 using FileShareAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 
 namespace FileShareAPI.Controllers;
@@ -21,6 +22,7 @@ public class AuthController : ControllerBase
         _environment = environment;
     }
 
+    [EnableRateLimiting("AuthRateLimit")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDetails)
     {
@@ -45,6 +47,7 @@ public class AuthController : ControllerBase
         }
     }
 
+    [EnableRateLimiting("AuthRateLimit")]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto registerDetails)
     {
@@ -72,6 +75,7 @@ public class AuthController : ControllerBase
         }
     }
 
+    [EnableRateLimiting("AuthRateLimit")]
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh()
     {

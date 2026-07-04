@@ -13,10 +13,12 @@ namespace FileShareAPI.Controllers;
 public class FileController : ControllerBase
 {
     private readonly IFileService _fileService;
+    private readonly IAuditService _auditService;
 
-    public FileController(IFileService fileService)
+    public FileController(IFileService fileService, IAuditService auditService)
     {
         _fileService = fileService;
+        _auditService = auditService;
     }
 
     private Guid GetCurrentUserId()
@@ -25,6 +27,11 @@ public class FileController : ControllerBase
             ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         return Guid.Parse(userIdValue!);
+    }
+
+    private string GetClientIp()
+    {
+        return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
 
     [HttpGet("test")]
@@ -44,6 +51,9 @@ public class FileController : ControllerBase
         }
 
         var fileRecord = await _fileService.UploadAsync(file, GetCurrentUserId());
+
+        await _auditService.LogAsync(GetCurrentUserId(), "Upload", fileRecord.Id, fileRecord.FileName, GetClientIp());
+
         return Ok(fileRecord);
     }
 
@@ -95,6 +105,9 @@ public class FileController : ControllerBase
         try
         {
             var file = await _fileService.DownloadFileAsync(id, GetCurrentUserId());
+
+            await _auditService.LogAsync(GetCurrentUserId(), "Download", id, file.FileName, GetClientIp());
+
             return File(file.Stream, file.ContentType, file.FileName);
         }
         catch (FileNotFoundException)
@@ -108,7 +121,15 @@ public class FileController : ControllerBase
     {
         try
         {
-            var url = await _fileService.GenerateDownloadLinkAsync(id, GetCurrentUserId());
+            var userId = GetCurrentUserId();
+            var url = await _fileService.GenerateDownloadLinkAsync(id, userId);
+
+            var fileRecord = await _fileService.GetFileAsync(id, userId);
+            if (fileRecord != null)
+            {
+                await _auditService.LogAsync(userId, "Download", id, fileRecord.FileName, GetClientIp());
+            }
+
             return Ok(new DownloadLinkDto { Url = url.Url });
         }
         catch (FileNotFoundException)
@@ -123,12 +144,21 @@ public class FileController : ControllerBase
 
         try
         {
-            var result = await _fileService.DeleteFileAsync(id, GetCurrentUserId());
+            var userId = GetCurrentUserId();
+            var fileRecord = await _fileService.GetFileAsync(id, userId);
+            if (fileRecord == null)
+            {
+                return NotFound("File not found.");
+            }
+
+            var result = await _fileService.DeleteFileAsync(id, userId);
 
             if (!result)
             {
                 return NotFound("File not found.");
             }
+
+            await _auditService.LogAsync(userId, "Delete", id, fileRecord.FileName, GetClientIp());
 
             return NoContent();
         }
@@ -143,6 +173,9 @@ public class FileController : ControllerBase
     {
         var userId = GetCurrentUserId();
         var fileRecord = await _fileService.CompleteUploadAsync(request, userId);
+
+        await _auditService.LogAsync(userId, "Upload", fileRecord.Id, fileRecord.FileName, GetClientIp());
+
         return Ok(fileRecord);
     }
 }
