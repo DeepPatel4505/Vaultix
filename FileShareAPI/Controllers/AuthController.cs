@@ -99,7 +99,7 @@ public class AuthController : ControllerBase
             });
 
 
-            return Ok(response.AccessToken);
+            return Ok(new { accessToken = response.AccessToken });
         }
         catch(Exception ex)
         {
