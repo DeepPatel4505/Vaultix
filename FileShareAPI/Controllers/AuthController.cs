@@ -3,6 +3,7 @@ using FileShareAPI.Dtos;
 using FileShareAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 
 namespace FileShareAPI.Controllers;
@@ -10,6 +11,7 @@ namespace FileShareAPI.Controllers;
 
 [ApiController]
 [Route("/api/[controller]")]
+[EnableRateLimiting("AuthRateLimit")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
