@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using FileShareAPI.Dtos;
 using FileShareAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -11,10 +13,12 @@ namespace FileShareAPI.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IWebHostEnvironment _environment;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IWebHostEnvironment environment)
     {
         _authService = authService;
+        _environment = environment;
     }
 
     [HttpPost("login")]
@@ -22,8 +26,18 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var user = await _authService.LoginUser(loginDetails.Email, loginDetails.Password);
-            return Ok(user);
+            var response = await _authService.LoginUser(loginDetails.Email, loginDetails.Password);
+            var refreshToken = response.RefreshToken;
+
+            Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !_environment.IsDevelopment(),
+                SameSite = _environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)
+            });
+
+            return Ok(response.AuthResponse);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -36,17 +50,91 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var user = await _authService.RegisterUser(
+            var response = await _authService.RegisterUser(
                 registerDetails.Username,
                 registerDetails.Email,
                 registerDetails.Password);
 
-            return Ok(user);
+            var refreshToken = response.RefreshToken;
+            Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !_environment.IsDevelopment(),
+                SameSite = _environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)
+            });
+
+            return Ok(response.AuthResponse);
         }
         catch (InvalidOperationException ex)
         {
             return Conflict(ex.Message);
         }
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh()
+    {
+        var refreshToken =
+            Request.Cookies["refreshToken"];
+
+        if (string.IsNullOrEmpty(refreshToken))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var response =
+                await _authService.RefreshToken(refreshToken);
+
+            Response.Cookies.Append("refreshToken", response.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !_environment.IsDevelopment(),
+                SameSite = _environment.IsDevelopment()
+        ? SameSiteMode.Lax
+        : SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)
+            });
+
+
+            return Ok(new { accessToken = response.AccessToken });
+        }
+        catch(Exception ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+    }
+
+    [HttpPost("logout")]
+    public IActionResult Logout()
+    {
+        Response.Cookies.Delete("refreshToken", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = !_environment.IsDevelopment(),
+            SameSite = _environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None
+        });
+        return Ok();
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetCurrentuser()
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (userIdClaim is null)
+        {
+            return Unauthorized();
+        }
+
+        var user = await _authService.GetCurrentUser(
+            Guid.Parse(userIdClaim)
+        );
+
+        return Ok(user);
     }
 
 }

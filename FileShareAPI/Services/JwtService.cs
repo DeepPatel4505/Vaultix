@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using FileShareAPI.Models;
 using Microsoft.IdentityModel.Tokens;
@@ -16,7 +17,7 @@ public class JwtService
         _config = config;
     }
 
-    public string GenerateToken(User user)
+    private string GenerateToken(User user)
     {
         var claims = new[]
         {
@@ -43,5 +44,20 @@ public class JwtService
             signingCredentials : creds
         );
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public string GenerateAccessToken(User user)
+    {
+        return GenerateToken(user);
+    }
+
+    public string GenerateRefreshToken()
+    {
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+    }   
+
+    public int GetRefreshTokenExpiry()
+    {
+        return _config.GetValue<int>("Jwt:RefreshTokenExpiry");
     }
 }

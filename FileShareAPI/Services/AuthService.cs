@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using FileShareAPI.Data;
 using FileShareAPI.Dtos;
 using FileShareAPI.Models;
@@ -21,7 +23,7 @@ public class AuthService : IAuthService
         _passwordHasher = passwordHasher;
     }
 
-    public async Task<AuthResponseDto> LoginUser(string email, string password)
+    public async Task<AuthResultDto> LoginUser(string email, string password)
     {
         var normalizedEmail = NormalizeEmail(email);
 
@@ -32,10 +34,10 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
-        return BuildAuthResponse(user);
+        return await BuildAuthResponse(user);
     }
 
-    public async Task<AuthResponseDto> RegisterUser(string username, string email, string password)
+    public async Task<AuthResultDto> RegisterUser(string username, string email, string password)
     {
         var normalizedEmail = NormalizeEmail(email);
         var normalizedUsername = username.Trim();
@@ -58,21 +60,100 @@ public class AuthService : IAuthService
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
 
-        return BuildAuthResponse(user);
+        return await BuildAuthResponse(user);
     }
 
-    private AuthResponseDto BuildAuthResponse(User user)
+    private async Task<AuthResultDto> BuildAuthResponse(User user)
     {
-        var token = _jwtService.GenerateToken(user);
+        var accessToken = _jwtService.GenerateAccessToken(user);
+        var refreshToken = _jwtService.GenerateRefreshToken();
+        var refreshExpiresAt = _jwtService.GetRefreshTokenExpiry();
 
-        return new AuthResponseDto(
+        var refreshTokenEntity = new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            TokenHash = HashToken(refreshToken),
+            UserId = user.Id,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(refreshExpiresAt),
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _db.RefreshTokens.Add(refreshTokenEntity);
+        await _db.SaveChangesAsync();
+
+        return new AuthResultDto(
+            new AuthResponseDto(
             user.Id,
             user.Username,
             user.Email,
-            token
+            accessToken
+            ),
+            refreshToken,
+            refreshExpiresAt
         );
     }
 
+    public async Task<RefreshResponseDto> RefreshToken(string refreshToken)
+    {
+        var hashedToken = HashToken(refreshToken);
+
+        var tokens = await _db.RefreshTokens.ToListAsync();
+
+        var tokenEntity = await _db.RefreshTokens
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(rt =>
+                                    rt.TokenHash == hashedToken &&
+                                    rt.ExpiresAt > DateTime.UtcNow
+                                ) ?? throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+
+        var user = await _db.Users.FindAsync(tokenEntity.UserId) ?? throw new UnauthorizedAccessException("User not found.");
+
+        var newRefreshToken = _jwtService.GenerateRefreshToken();
+        var newRefreshExpiresAt = _jwtService.GetRefreshTokenExpiry();
+
+        var rowsAffected = await _db.RefreshTokens
+                            .Where(rt =>
+                                    rt.TokenHash == hashedToken &&
+                                    rt.ExpiresAt > DateTime.UtcNow)
+                            .ExecuteUpdateAsync(update => update
+                                    .SetProperty(rt => rt.TokenHash, HashToken(newRefreshToken))
+                                    .SetProperty(rt => rt.ExpiresAt,
+                                        DateTime.UtcNow.AddMinutes(newRefreshExpiresAt)));
+
+        if (rowsAffected == 0)
+        {
+            throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+        }
+
+        var newAccessToken = _jwtService.GenerateAccessToken(user);
+
+        return new RefreshResponseDto(
+            newAccessToken,
+            newRefreshToken,
+            newRefreshExpiresAt
+        );
+    }
+
+    public async Task<UserDto> GetCurrentUser(
+    Guid userId)
+    {
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == userId)
+            ?? throw new UnauthorizedAccessException();
+
+        return new UserDto(
+            user.Id,
+            user.Username,
+            user.Email
+        );
+    }
+
+    private static string HashToken(string token)
+    {
+        using var sha = SHA256.Create();
+        var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(token));
+        return Convert.ToBase64String(bytes);
+    }
     private static string NormalizeEmail(string email)
     {
         return email.Trim().ToLowerInvariant();

@@ -1,23 +1,12 @@
-import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import FilesPage from "./pages/FilesPage";
 import UploadPage from "./pages/UploadPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import LandingPage from "./pages/LandingPage";
 import Layout from "./layout/Layout";
-import { useAuth } from "./hooks/useAuth";
+import RequireAuth from "./components/RequireAuth";
 import { WorkspaceProvider } from "./context/WorkspaceContext";
-
-const RequireAuth = () => {
-  const { token } = useAuth();
-  const location = useLocation();
-
-  if (!token) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
-  }
-
-  return <Outlet />;
-};
 
 function App() {
   return (
