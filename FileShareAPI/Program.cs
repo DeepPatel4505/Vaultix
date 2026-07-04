@@ -128,6 +128,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
 
 var allowedOrigins =
     builder.Configuration
