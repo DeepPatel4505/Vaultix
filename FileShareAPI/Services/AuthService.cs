@@ -96,23 +96,36 @@ public class AuthService : IAuthService
     public async Task<RefreshResponseDto> RefreshToken(string refreshToken)
     {
         var hashedToken = HashToken(refreshToken);
-        var tokenEntity = await _db.RefreshTokens.FirstOrDefaultAsync(rt => rt.TokenHash == hashedToken) ?? throw new UnauthorizedAccessException();
 
+        var tokens = await _db.RefreshTokens.ToListAsync();
 
-        if (tokenEntity == null || tokenEntity.ExpiresAt < DateTime.UtcNow)
-        {
-            throw new UnauthorizedAccessException("Invalid or expired refresh token.");
-        }
-        var user = await _db.Users.FindAsync(tokenEntity.UserId) ?? throw new UnauthorizedAccessException();
+        var tokenEntity = await _db.RefreshTokens
+                                .AsNoTracking()
+                                .FirstOrDefaultAsync(rt =>
+                                    rt.TokenHash == hashedToken &&
+                                    rt.ExpiresAt > DateTime.UtcNow
+                                ) ?? throw new UnauthorizedAccessException("Invalid or expired refresh token.");
 
-        var newAccessToken = _jwtService.GenerateAccessToken(user);
+        var user = await _db.Users.FindAsync(tokenEntity.UserId) ?? throw new UnauthorizedAccessException("User not found.");
+
         var newRefreshToken = _jwtService.GenerateRefreshToken();
         var newRefreshExpiresAt = _jwtService.GetRefreshTokenExpiry();
 
-        tokenEntity.TokenHash = HashToken(newRefreshToken);
-        tokenEntity.ExpiresAt = DateTime.UtcNow.AddMinutes(newRefreshExpiresAt);
+        var rowsAffected = await _db.RefreshTokens
+                            .Where(rt =>
+                                    rt.TokenHash == hashedToken &&
+                                    rt.ExpiresAt > DateTime.UtcNow)
+                            .ExecuteUpdateAsync(update => update
+                                    .SetProperty(rt => rt.TokenHash, HashToken(newRefreshToken))
+                                    .SetProperty(rt => rt.ExpiresAt,
+                                        DateTime.UtcNow.AddMinutes(newRefreshExpiresAt)));
 
-        await _db.SaveChangesAsync();
+        if (rowsAffected == 0)
+        {
+            throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+        }
+
+        var newAccessToken = _jwtService.GenerateAccessToken(user);
 
         return new RefreshResponseDto(
             newAccessToken,
