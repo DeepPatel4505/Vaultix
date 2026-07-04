@@ -170,7 +170,7 @@ export const WorkspaceProvider = ({ children }) => {
             
             const response = await api.post("/file/upload-link", {
                 fileName: fileObj.name,
-                contentType: fileObj.type,
+                contentType: fileObj.type || "application/octet-stream",
                 size: fileObj.size,
             });
 
@@ -183,10 +183,14 @@ export const WorkspaceProvider = ({ children }) => {
                 `Received upload URL: ${uploadUrl}, Storage Key: ${storageKey}`,
             );
 
+            console.log(`Starting upload for file: ${fileObj.name}, size: ${fileObj.size} bytes`);
+            console.log(`File type: ${fileObj.type}`);
+            console.log(fileObj);
+
             // Perform the actual file upload to the provided URL
             await axios.put(uploadUrl, fileObj, {
                 headers: {
-                    "Content-Type": fileObj.type,
+                    "Content-Type": fileObj.type || "application/octet-stream",
                 },
                 onUploadProgress: (progressEvent) => {
                     if (!progressEvent.total) return; // Avoid division by zero
