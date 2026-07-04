@@ -11,7 +11,6 @@ namespace FileShareAPI.Controllers;
 
 [ApiController]
 [Route("/api/[controller]")]
-[EnableRateLimiting("AuthRateLimit")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -23,6 +22,7 @@ public class AuthController : ControllerBase
         _environment = environment;
     }
 
+    [EnableRateLimiting("AuthRateLimit")]
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDetails)
     {
@@ -47,6 +47,7 @@ public class AuthController : ControllerBase
         }
     }
 
+    [EnableRateLimiting("AuthRateLimit")]
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto registerDetails)
     {
@@ -74,6 +75,7 @@ public class AuthController : ControllerBase
         }
     }
 
+    [EnableRateLimiting("AuthRateLimit")]
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh()
     {
