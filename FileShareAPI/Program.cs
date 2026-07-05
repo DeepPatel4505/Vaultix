@@ -59,6 +59,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
         ForwardedHeaders.XForwardedProto;
 });
 
+builder.Services.Configure<AuthCookieOptions>(
+    builder.Configuration.GetSection(AuthCookieOptions.Position));
+
 var jwtsettings = builder.Configuration.GetSection("Jwt");
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

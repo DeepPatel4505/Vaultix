@@ -4,6 +4,7 @@ using FileShareAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 
 namespace FileShareAPI.Controllers;
@@ -16,10 +17,27 @@ public class AuthController : ControllerBase
     private readonly IAuthService _authService;
     private readonly IWebHostEnvironment _environment;
 
-    public AuthController(IAuthService authService, IWebHostEnvironment environment)
+    private readonly Options.AuthCookieOptions _cookieOptions;
+
+    public AuthController(IAuthService authService, IWebHostEnvironment environment, IOptions<Options.AuthCookieOptions> cookieOptions)
     {
         _authService = authService;
         _environment = environment;
+        _cookieOptions = cookieOptions.Value;
+    }
+
+    private Microsoft.AspNetCore.Http.CookieOptions CreateRefreshCookieOptions(DateTime expires)
+    {
+        return new Microsoft.AspNetCore.Http.CookieOptions
+        {
+            HttpOnly = _cookieOptions.HttpOnly,
+            Secure = _cookieOptions.Secure,
+            SameSite = _cookieOptions.SameSite,
+            Path = _cookieOptions.Path,
+            Domain = string.IsNullOrEmpty(_cookieOptions.Domain) ? null : _cookieOptions.Domain,
+            IsEssential = _cookieOptions.IsEssential,
+            Expires = expires
+        };
     }
 
     [EnableRateLimiting("AuthRateLimit")]
@@ -36,13 +54,7 @@ public class AuthController : ControllerBase
             var response = await _authService.LoginUser(loginDetails.Email, loginDetails.Password);
             var refreshToken = response.RefreshToken;
 
-            Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = !_environment.IsDevelopment(),
-                SameSite = _environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)
-            });
+            Response.Cookies.Append("refreshToken", refreshToken, CreateRefreshCookieOptions(DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)));
 
             return Ok(response.AuthResponse);
         }
@@ -64,13 +76,7 @@ public class AuthController : ControllerBase
                 registerDetails.Password);
 
             var refreshToken = response.RefreshToken;
-            Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = !_environment.IsDevelopment(),
-                SameSite = _environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)
-            });
+            Response.Cookies.Append("refreshToken", refreshToken, CreateRefreshCookieOptions(DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)));
 
             return Ok(response.AuthResponse);
         }
@@ -107,15 +113,7 @@ public class AuthController : ControllerBase
             var response =
                 await _authService.RefreshToken(refreshToken);
 
-            Response.Cookies.Append("refreshToken", response.RefreshToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = !_environment.IsDevelopment(),
-                SameSite = _environment.IsDevelopment()
-        ? SameSiteMode.Lax
-        : SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)
-            });
+            Response.Cookies.Append("refreshToken", response.RefreshToken, CreateRefreshCookieOptions(DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)));
 
 
             return Ok(new { accessToken = response.AccessToken });
@@ -129,12 +127,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public IActionResult Logout()
     {
-        Response.Cookies.Delete("refreshToken", new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = !_environment.IsDevelopment(),
-            SameSite = _environment.IsDevelopment() ? SameSiteMode.Lax : SameSiteMode.None
-        });
+        Response.Cookies.Delete("refreshToken",CreateRefreshCookieOptions(DateTime.UtcNow.AddDays(-1)));
         return Ok();
     }
 
