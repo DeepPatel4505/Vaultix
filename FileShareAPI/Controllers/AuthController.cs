@@ -28,10 +28,6 @@ public class AuthController : ControllerBase
 
     private Microsoft.AspNetCore.Http.CookieOptions CreateRefreshCookieOptions(double ageInMinutes)
     {
-        Console.WriteLine("Cookie Domain: " + _cookieOptions.Domain);
-        Console.WriteLine("Cookie Path: " + _cookieOptions.Path);
-        Console.WriteLine("Cookie SameSite: " + _cookieOptions.SameSite);
-        Console.WriteLine("Cookie Secure: " + _cookieOptions.Secure);
         return new Microsoft.AspNetCore.Http.CookieOptions
         {
             HttpOnly = _cookieOptions.HttpOnly,
@@ -48,11 +44,6 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDetails)
     {
-        Console.WriteLine("========== LOGIN ==========");
-        Console.WriteLine($"Host: {Request.Host}");
-        Console.WriteLine($"Origin: {Request.Headers.Origin}");
-        Console.WriteLine($"Scheme: {Request.Scheme}");
-        Console.WriteLine($"IsHttps: {Request.IsHttps}");
         try
         {
             var response = await _authService.LoginUser(loginDetails.Email, loginDetails.Password);
@@ -94,16 +85,6 @@ public class AuthController : ControllerBase
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh()
     {
-        Console.WriteLine("========== REFRESH ==========");
-        Console.WriteLine($"Host: {Request.Host}");
-        Console.WriteLine($"Origin: {Request.Headers.Origin}");
-        Console.WriteLine($"Cookie header: {Request.Headers.Cookie}");
-
-        foreach (var cookie in Request.Cookies)
-        {
-            Console.WriteLine($"{cookie.Key} = {cookie.Value}");
-        }
-
         var refreshToken =
             Request.Cookies["refreshToken"];
 

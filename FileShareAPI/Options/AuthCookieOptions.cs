@@ -4,7 +4,7 @@ namespace FileShareAPI.Options;
 
 public sealed class AuthCookieOptions
 {
-    public const string Position = "Cookie";
+    public const string Position = "AuthCookie";
 
     public bool HttpOnly { get; init; } = true;
 
