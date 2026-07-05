@@ -23,8 +23,19 @@ export const ShareDrawer = ({ file, isOpen, onClose, onSave }) => {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [shareLink, setShareLink] = useState(null);
+    const [reuseOption, setReuseOption] = useState("new");
 
     const qrRef = useRef(null);
+
+    const getExpiresTimeLeft = (dateStr) => {
+        const diffMs = new Date(dateStr) - new Date();
+        if (diffMs < 0) return "Expired";
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
+        if (diffDays > 1) return `${diffDays} days left`;
+        if (diffHours > 1) return `${diffHours} hours left`;
+        return "expiring soon";
+    };
 
     // Load initial state if file is already shared
     useEffect(() => {
@@ -32,11 +43,12 @@ export const ShareDrawer = ({ file, isOpen, onClose, onSave }) => {
             setError("");
             setSuccess("");
             setCopied(false);
+            setReuseOption("new");
 
-            if (file.shareLink && file.shareLink.isActive) {
+            if (file.shareLink) {
                 const sl = file.shareLink;
                 setShareLink(sl);
-                setIsPublic(sl.isPublic);
+                setIsPublic(sl.status === "Active" || sl.isActive);
                 setPasswordEnabled(sl.passwordProtected);
                 setPassword(""); // Do not show hash to user, leave blank to keep unchanged
 
@@ -60,7 +72,7 @@ export const ShareDrawer = ({ file, isOpen, onClose, onSave }) => {
                 }
             } else {
                 setShareLink(null);
-                setIsPublic(true);
+                setIsPublic(false);
                 setPasswordEnabled(false);
                 setPassword("");
                 setExpiryPreset("never");
@@ -115,6 +127,45 @@ export const ShareDrawer = ({ file, isOpen, onClose, onSave }) => {
         image.src = blobURL;
     };
 
+    const handleRegenerate = async () => {
+        setIsSaving(true);
+        setError("");
+        setSuccess("");
+        try {
+            const response = await api.post("/share/regenerate", { fileId: file.id });
+            const sl = response.data;
+            setShareLink(sl);
+            setIsPublic(sl.status === "Active");
+            setPasswordEnabled(sl.passwordProtected);
+            if (sl.expiresAt) {
+                setExpiryPreset("custom");
+                const expDate = new Date(sl.expiresAt);
+                const localIso = new Date(expDate.getTime() - expDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                setCustomExpiry(localIso);
+            } else {
+                setExpiryPreset("never");
+                setCustomExpiry("");
+            }
+            if (sl.downloadLimit) {
+                setLimitPreset("custom");
+                setCustomLimit(String(sl.downloadLimit));
+            } else {
+                setLimitPreset("unlimited");
+                setCustomLimit("");
+            }
+            setSuccess("New share link regenerated successfully!");
+            if (onSave) {
+                await onSave();
+            }
+            setTimeout(() => setSuccess(""), 3000);
+        } catch (err) {
+            console.error("Regenerate link failed:", err);
+            setError(err.response?.data?.message || "Failed to regenerate share link.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const handleSave = async () => {
         setIsSaving(false);
         setError("");
@@ -140,31 +191,43 @@ export const ShareDrawer = ({ file, isOpen, onClose, onSave }) => {
                 setError("Please enter a valid download limit.");
                 return;
             }
+        } else if (limitPreset !== "unlimited") {
+            downloadLimitVal = parseInt(limitPreset, 10);
         }
 
         try {
             setIsSaving(true);
             if (isPublic) {
-                // Upsert Share Link
-                const payload = {
-                    fileId: file.id,
-                    isPublic: true,
-                    password: passwordEnabled ? password || null : null, // send null if not enabled, or leave empty if unmodified but existing password
-                    expiresAt: expiresAtVal,
-                    downloadLimit: downloadLimitVal
-                };
-
-                const response = await api.post("/share", payload);
-                setShareLink(response.data);
-                setSuccess("Share settings saved successfully!");
+                if (shareLink && shareLink.status === "Active") {
+                    const payload = {
+                        fileId: file.id,
+                        isPublic: true,
+                        password: passwordEnabled ? password || null : null,
+                        expiresAt: expiresAtVal,
+                        downloadLimit: downloadLimitVal
+                    };
+                    const response = await api.patch("/share/settings", payload);
+                    setShareLink(response.data);
+                    setSuccess("Share settings updated successfully!");
+                } else {
+                    const payload = {
+                        fileId: file.id,
+                        isPublic: true,
+                        password: passwordEnabled ? password || null : null,
+                        expiresAt: expiresAtVal,
+                        downloadLimit: downloadLimitVal,
+                        reusePreviousToken: file.shareLink ? reuseOption === "reuse" : false
+                    };
+                    const response = await api.post("/share/create", payload);
+                    setShareLink(response.data);
+                    setSuccess("Share settings saved successfully!");
+                }
             } else {
-                // Delete/Disable sharing
-                await api.delete(`/share/${file.id}`);
+                await api.delete(`/share?fileId=${file.id}`);
                 setShareLink(null);
                 setSuccess("File unshared successfully.");
             }
 
-            // Refresh parent list
             if (onSave) {
                 await onSave();
             }
@@ -241,10 +304,148 @@ export const ShareDrawer = ({ file, isOpen, onClose, onSave }) => {
                     </button>
                 </div>
 
+                {/* Status Block */}
+                {shareLink && (
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-soft">Sharing Status</label>
+                        {shareLink.status === "Active" && (
+                            <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg flex items-center justify-between text-xs">
+                                <div>
+                                    <span className="font-bold text-badge-emerald flex items-center gap-1.5">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-badge-emerald animate-pulse"></span>
+                                        🟢 Active
+                                    </span>
+                                    <span className="text-[10px] text-muted-soft block mt-0.5 font-medium">
+                                        Downloads: {shareLink.downloadLimit ? `${shareLink.downloadCount} / ${shareLink.downloadLimit}` : `${shareLink.downloadCount} / ∞`}
+                                        {shareLink.expiresAt && ` • ${getExpiresTimeLeft(shareLink.expiresAt)}`}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                        {shareLink.status === "Expired" && (
+                            <div className="p-3 bg-pink-500/5 border border-pink-500/20 rounded-lg flex items-center justify-between text-xs">
+                                <div>
+                                    <span className="font-bold text-badge-pink flex items-center gap-1.5">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-badge-pink"></span>
+                                        🔴 Expired
+                                    </span>
+                                    <span className="text-[10px] text-muted-soft block mt-0.5 font-medium font-mono">
+                                        Expired on {new Date(shareLink.expiresAt).toLocaleDateString()}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleRegenerate}
+                                    disabled={isSaving}
+                                    className="px-2.5 py-1 rounded font-bold text-[10px] bg-brand-accent text-white hover:bg-brand-accent/90 cursor-pointer disabled:opacity-50 transition-colors"
+                                >
+                                    Regenerate Link
+                                </button>
+                            </div>
+                        )}
+                        {shareLink.status === "DownloadLimitReached" && (
+                            <div className="p-3 bg-orange-500/5 border border-orange-500/20 rounded-lg flex items-center justify-between text-xs">
+                                <div>
+                                    <span className="font-bold text-badge-orange flex items-center gap-1.5">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-badge-orange"></span>
+                                        🟠 Download Limit Reached
+                                    </span>
+                                    <span className="text-[10px] text-muted-soft block mt-0.5 font-medium">
+                                        {shareLink.downloadLimit} / {shareLink.downloadLimit} downloads
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleRegenerate}
+                                    disabled={isSaving}
+                                    className="px-2.5 py-1 rounded font-bold text-[10px] bg-brand-accent text-white hover:bg-brand-accent/90 cursor-pointer disabled:opacity-50 transition-colors"
+                                >
+                                    Regenerate Link
+                                </button>
+                            </div>
+                        )}
+                        {(shareLink.status === "Disabled" || !isPublic) && (
+                            <div className="p-3 bg-surface-strong/30 border border-hairline rounded-lg flex items-center justify-between text-xs">
+                                <div>
+                                    <span className="font-bold text-muted flex items-center gap-1.5">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-muted"></span>
+                                        ⚫ Sharing Disabled
+                                    </span>
+                                </div>
+                                {!isPublic && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsPublic(true);
+                                            setReuseOption("new");
+                                        }}
+                                        className="px-2.5 py-1 rounded font-bold text-[10px] bg-brand-accent text-white hover:bg-brand-accent/90 cursor-pointer transition-colors"
+                                    >
+                                        Enable Sharing
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* If sharing toggle is OFF but we have no shareLink record yet */}
+                {!isPublic && !shareLink && (
+                    <div className="p-3 bg-surface-strong/30 border border-hairline rounded-lg flex items-center justify-between text-xs">
+                        <div>
+                            <span className="font-bold text-muted flex items-center gap-1.5">
+                                <span className="h-1.5 w-1.5 rounded-full bg-muted"></span>
+                                ⚫ Sharing Disabled
+                            </span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setIsPublic(true)}
+                            className="px-2.5 py-1 rounded font-bold text-[10px] bg-brand-accent text-white hover:bg-brand-accent/90 cursor-pointer transition-colors"
+                        >
+                            Enable Sharing
+                        </button>
+                    </div>
+                )}
+
+                {/* Reuse Previous Link Selection UI */}
+                {isPublic && file.shareLink && file.shareLink.status !== "Active" && (
+                    <div className="border border-hairline rounded-lg p-3 space-y-2 bg-brand-accent/5 animate-fadeIn">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-soft block">Previous Link Detected</span>
+                        <span className="text-[10px] text-muted-soft block leading-relaxed">
+                            We found a previous sharing link for this file. Would you like to reuse it or generate a new secure link?
+                        </span>
+                        <div className="space-y-1.5 pt-1">
+                            <label className="flex items-center gap-2 text-xs font-bold text-ink cursor-pointer select-none">
+                                <input 
+                                    type="radio" 
+                                    name="reuseOption" 
+                                    value="new" 
+                                    checked={reuseOption === "new"}
+                                    onChange={() => setReuseOption("new")}
+                                    className="h-3.5 w-3.5 text-brand-accent focus:ring-brand-accent cursor-pointer"
+                                />
+                                <span>Generate new secure link (Recommended)</span>
+                            </label>
+                            <label className="flex items-center gap-2 text-xs font-bold text-ink cursor-pointer select-none">
+                                <input 
+                                    type="radio" 
+                                    name="reuseOption" 
+                                    value="reuse" 
+                                    checked={reuseOption === "reuse"}
+                                    onChange={() => setReuseOption("reuse")}
+                                    className="h-3.5 w-3.5 text-brand-accent focus:ring-brand-accent cursor-pointer"
+                                />
+                                <span>Reuse previous link ({file.shareLink.token.substring(0, 8)}...)</span>
+                            </label>
+                        </div>
+                    </div>
+                )}
+
                 {isPublic && (
                     <>
                         {/* URL Copy Card */}
-                        {shareLink ? (
+                        {shareLink && shareLink.status === "Active" ? (
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold uppercase tracking-wider text-muted-soft">Share Link</label>
                                 <div className="flex items-center gap-1">
@@ -266,11 +467,11 @@ export const ShareDrawer = ({ file, isOpen, onClose, onSave }) => {
                                     </button>
                                 </div>
                             </div>
-                        ) : (
+                        ) : isPublic && !shareLink ? (
                             <div className="p-3 text-center border border-dashed border-hairline rounded text-xs text-muted-soft select-none bg-surface-soft/10">
                                 Click <strong>Save Settings</strong> to generate your share URL.
                             </div>
-                        )}
+                        ) : null}
 
                         {/* Password protection details */}
                         <div className="border border-hairline rounded-lg p-3 space-y-3 bg-surface-soft/10">
@@ -394,7 +595,7 @@ export const ShareDrawer = ({ file, isOpen, onClose, onSave }) => {
                         </div>
 
                         {/* QR Code generator */}
-                        {shareLink && (
+                        {shareLink && shareLink.status === "Active" && (
                             <div className="border border-hairline rounded-lg p-4 bg-surface-soft/10 flex flex-col items-center gap-3">
                                 <span className="text-xs font-semibold text-ink self-start">QR Code Sharing</span>
                                 <div ref={qrRef} className="p-2.5 bg-white rounded border border-hairline/60">

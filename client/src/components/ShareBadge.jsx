@@ -1,9 +1,40 @@
 import React from "react";
 
 export const ShareBadges = ({ shareLink }) => {
-    if (!shareLink || !shareLink.isActive) return null;
+    if (!shareLink) return null;
 
     const badges = [];
+
+    // If disabled or deleted, don't show any badges
+    if (shareLink.status === "Disabled" || shareLink.status === "Deleted" || !shareLink.isActive) {
+        if (shareLink.status === "Expired") {
+            badges.push(
+                <span 
+                    key="expired" 
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-badge-pink/10 text-badge-pink border border-badge-pink/20 shrink-0"
+                >
+                    ⏳ Expired
+                </span>
+            );
+        } else if (shareLink.status === "DownloadLimitReached") {
+            badges.push(
+                <span 
+                    key="limit-reached" 
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-badge-pink/10 text-badge-pink border border-badge-pink/20 shrink-0"
+                >
+                    ↓ Limit Reached
+                </span>
+            );
+        } else {
+            return null;
+        }
+        
+        return (
+            <div className="flex flex-wrap gap-1 items-center select-none shrink-0">
+                {badges}
+            </div>
+        );
+    }
 
     // 1. Shared badge
     badges.push(
