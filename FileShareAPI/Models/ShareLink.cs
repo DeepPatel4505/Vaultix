@@ -13,6 +13,8 @@ public class ShareLink
     public int? DownloadLimit { get; set; }
     public int DownloadCount { get; set; } = 0;
     public bool IsActive { get; set; } = true;
+    public ShareLinkStatus Status { get; set; } = ShareLinkStatus.Active;
+    public DateTime? DisabledAt { get; set; }
     public Guid CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastAccessedAt { get; set; }

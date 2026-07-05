@@ -35,19 +35,66 @@ public class ShareController : ControllerBase
         return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
 
+    public record RegenerateShareRequest(Guid FileId);
+
     [HttpPost]
+    [HttpPost("create")]
     [Authorize]
     public async Task<IActionResult> ShareFile([FromBody] CreateShareLinkRequestDto request)
     {
         try
         {
             var userId = GetCurrentUserId();
-            var result = await _shareService.CreateOrUpdateShareLinkAsync(request, userId);
+            var result = await _shareService.CreateShareLinkAsync(request, userId);
             return Ok(result);
         }
         catch (UnauthorizedAccessException ex)
         {
             return Unauthorized(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("regenerate")]
+    [Authorize]
+    public async Task<IActionResult> RegenerateShare([FromBody] RegenerateShareRequest request)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _shareService.RegenerateShareLinkAsync(request.FileId, userId);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = ex.Message });
+        }
+    }
+
+    [HttpPatch("settings")]
+    [Authorize]
+    public async Task<IActionResult> UpdateSettings([FromBody] CreateShareLinkRequestDto request)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _shareService.UpdateShareSettingsAsync(request, userId);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -67,6 +114,10 @@ public class ShareController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status410Gone, new { message = ex.Message });
         }
         catch (Exception ex)
         {
@@ -104,13 +155,20 @@ public class ShareController : ControllerBase
     }
 
     [HttpDelete("{fileId}")]
+    [HttpDelete]
     [Authorize]
-    public async Task<IActionResult> DisableShare(Guid fileId)
+    public async Task<IActionResult> DisableShare([FromRoute] Guid? fileId, [FromQuery] Guid? queryFileId)
     {
         try
         {
+            var targetFileId = fileId ?? queryFileId;
+            if (targetFileId == null || targetFileId == Guid.Empty)
+            {
+                return BadRequest(new { message = "FileId is required." });
+            }
+
             var userId = GetCurrentUserId();
-            var result = await _shareService.DisableShareLinkAsync(fileId, userId);
+            var result = await _shareService.DisableShareLinkAsync(targetFileId.Value, userId);
             if (!result)
             {
                 return NotFound(new { message = "Share link not found for this file." });

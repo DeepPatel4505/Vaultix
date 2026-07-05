@@ -10,5 +10,6 @@ public record ShareLinkInfoDto(
     int? DownloadLimit,
     int DownloadCount,
     bool PasswordRequired,
-    bool IsActive
+    bool IsActive,
+    string Status
 );

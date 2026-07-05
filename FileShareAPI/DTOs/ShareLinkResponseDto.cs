@@ -10,5 +10,6 @@ public record ShareLinkResponseDto(
     bool PasswordProtected,
     DateTime? ExpiresAt,
     int? DownloadLimit,
-    int DownloadCount
+    int DownloadCount,
+    string Status
 );

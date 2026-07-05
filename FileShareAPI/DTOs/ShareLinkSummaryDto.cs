@@ -9,5 +9,6 @@ public record ShareLinkSummaryDto(
     DateTime? ExpiresAt,
     int? DownloadLimit,
     int DownloadCount,
-    bool IsActive
+    bool IsActive,
+    string Status
 );

@@ -21,5 +21,5 @@ public class FileRecord
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
 
     public User? User { get; set; }
-    public ShareLink? ShareLink { get; set; }
+    public ICollection<ShareLink> ShareLinks { get; set; } = new List<ShareLink>();
 }

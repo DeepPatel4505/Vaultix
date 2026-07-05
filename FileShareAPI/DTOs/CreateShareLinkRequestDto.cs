@@ -7,5 +7,6 @@ public record CreateShareLinkRequestDto(
     bool IsPublic,
     string? Password,
     DateTime? ExpiresAt,
-    int? DownloadLimit
+    int? DownloadLimit,
+    bool? ReusePreviousToken = false
 );

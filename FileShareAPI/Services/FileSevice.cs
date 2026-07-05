@@ -43,27 +43,33 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
     public async Task<List<FileListDto>> GetFileListAsync(Guid userId)
     {
         var fileList = await _db.Files
-            .Include(file => file.ShareLink)
+            .Include(file => file.ShareLinks)
             .Where(file => file.UserId == userId)
             .Where(file => file.StorageProvider == ActiveStorageProvider)
             .ToListAsync();
 
-        return [.. fileList.Select(f => new FileListDto(
-            f.Id,
-            f.OriginalFileName,
-            f.Size,
-            f.DownloadCount,
-            f.UploadedAt,
-            f.ShareLink != null && f.ShareLink.IsActive ? new ShareLinkSummaryDto(
-                f.ShareLink.Token,
-                f.ShareLink.IsPublic,
-                !string.IsNullOrEmpty(f.ShareLink.PasswordHash),
-                f.ShareLink.ExpiresAt,
-                f.ShareLink.DownloadLimit,
-                f.ShareLink.DownloadCount,
-                f.ShareLink.IsActive
-            ) : null
-        ))];
+        return [.. fileList.Select(f => {
+            var currentSession = f.ShareLinks.FirstOrDefault(sl => sl.Status == ShareLinkStatus.Active)
+                ?? f.ShareLinks.OrderByDescending(sl => sl.CreatedAt).FirstOrDefault();
+
+            return new FileListDto(
+                f.Id,
+                f.OriginalFileName,
+                f.Size,
+                f.DownloadCount,
+                f.UploadedAt,
+                currentSession != null ? new ShareLinkSummaryDto(
+                    currentSession.Token,
+                    currentSession.IsPublic,
+                    !string.IsNullOrEmpty(currentSession.PasswordHash),
+                    currentSession.ExpiresAt,
+                    currentSession.DownloadLimit,
+                    currentSession.DownloadCount,
+                    currentSession.IsActive,
+                    currentSession.Status.ToString()
+                ) : null
+            );
+        })];
     }
 
     public async Task<FileResponseDto?> GetFileAsync(Guid fileId, Guid userId)

@@ -36,12 +36,11 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(sl => sl.Token)
                 .IsUnique();
 
-            entity.HasIndex(sl => sl.FileId)
-                .IsUnique();
+            entity.HasIndex(sl => sl.FileId);
 
             entity.HasOne(sl => sl.File)
-                .WithOne(file => file.ShareLink)
-                .HasForeignKey<ShareLink>(sl => sl.FileId)
+                .WithMany(file => file.ShareLinks)
+                .HasForeignKey(sl => sl.FileId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(sl => sl.Creator)
