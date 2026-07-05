@@ -13,6 +13,7 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,5 +30,24 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(rt => rt.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ShareLink>(entity =>
+        {
+            entity.HasIndex(sl => sl.Token)
+                .IsUnique();
+
+            entity.HasIndex(sl => sl.FileId)
+                .IsUnique();
+
+            entity.HasOne(sl => sl.File)
+                .WithOne(file => file.ShareLink)
+                .HasForeignKey<ShareLink>(sl => sl.FileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(sl => sl.Creator)
+                .WithMany()
+                .HasForeignKey(sl => sl.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
     }
 }
