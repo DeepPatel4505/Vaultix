@@ -12,8 +12,8 @@ using FileShareAPI.Options;
 using Amazon.S3;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -50,6 +50,16 @@ builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.MaxRequestBodySize =
         100 * 1024 * 1024; // 100 MB
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto;
+
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
 var jwtsettings = builder.Configuration.GetSection("Jwt");
@@ -189,6 +199,8 @@ if (app.Environment.IsDevelopment())
         .AddPreferredSecuritySchemes("Bearer")
         .EnablePersistentAuthentication());
 }
+
+app.UseForwardedHeaders();
 app.UseRouting();
 app.UseCors("AllowFrontend");
 
