@@ -79,6 +79,16 @@ public class AuthController : ControllerBase
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh()
     {
+        Console.WriteLine("========== REFRESH ==========");
+        Console.WriteLine($"Host: {Request.Host}");
+        Console.WriteLine($"Origin: {Request.Headers.Origin}");
+        Console.WriteLine($"Cookie header: {Request.Headers.Cookie}");
+
+        foreach (var cookie in Request.Cookies)
+        {
+            Console.WriteLine($"{cookie.Key} = {cookie.Value}");
+        }
+
         var refreshToken =
             Request.Cookies["refreshToken"];
 
@@ -105,7 +115,7 @@ public class AuthController : ControllerBase
 
             return Ok(new { accessToken = response.AccessToken });
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             return Unauthorized(ex.Message);
         }
