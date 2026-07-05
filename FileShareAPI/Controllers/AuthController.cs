@@ -26,8 +26,12 @@ public class AuthController : ControllerBase
         _cookieOptions = cookieOptions.Value;
     }
 
-    private Microsoft.AspNetCore.Http.CookieOptions CreateRefreshCookieOptions(DateTime expires)
+    private Microsoft.AspNetCore.Http.CookieOptions CreateRefreshCookieOptions(double ageInMinutes)
     {
+        Console.WriteLine("Cookie Domain: " + _cookieOptions.Domain);
+        Console.WriteLine("Cookie Path: " + _cookieOptions.Path);
+        Console.WriteLine("Cookie SameSite: " + _cookieOptions.SameSite);
+        Console.WriteLine("Cookie Secure: " + _cookieOptions.Secure);
         return new Microsoft.AspNetCore.Http.CookieOptions
         {
             HttpOnly = _cookieOptions.HttpOnly,
@@ -36,7 +40,7 @@ public class AuthController : ControllerBase
             Path = _cookieOptions.Path,
             Domain = string.IsNullOrEmpty(_cookieOptions.Domain) ? null : _cookieOptions.Domain,
             IsEssential = _cookieOptions.IsEssential,
-            Expires = expires
+            MaxAge = ageInMinutes > 0 ? TimeSpan.FromMinutes(ageInMinutes) : _cookieOptions.ExpiryDays > 0 ? TimeSpan.FromDays(_cookieOptions.ExpiryDays) : (TimeSpan?)null,
         };
     }
 
@@ -54,7 +58,7 @@ public class AuthController : ControllerBase
             var response = await _authService.LoginUser(loginDetails.Email, loginDetails.Password);
             var refreshToken = response.RefreshToken;
 
-            Response.Cookies.Append("refreshToken", refreshToken, CreateRefreshCookieOptions(DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)));
+            Response.Cookies.Append("refreshToken", refreshToken, CreateRefreshCookieOptions(response.RefreshTokenExpiry));
 
             return Ok(response.AuthResponse);
         }
@@ -76,7 +80,7 @@ public class AuthController : ControllerBase
                 registerDetails.Password);
 
             var refreshToken = response.RefreshToken;
-            Response.Cookies.Append("refreshToken", refreshToken, CreateRefreshCookieOptions(DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)));
+            Response.Cookies.Append("refreshToken", refreshToken, CreateRefreshCookieOptions(response.RefreshTokenExpiry));
 
             return Ok(response.AuthResponse);
         }
@@ -113,7 +117,7 @@ public class AuthController : ControllerBase
             var response =
                 await _authService.RefreshToken(refreshToken);
 
-            Response.Cookies.Append("refreshToken", response.RefreshToken, CreateRefreshCookieOptions(DateTime.UtcNow.AddMinutes(response.RefreshTokenExpiry)));
+            Response.Cookies.Append("refreshToken", response.RefreshToken, CreateRefreshCookieOptions(response.RefreshTokenExpiry));
 
 
             return Ok(new { accessToken = response.AccessToken });
@@ -127,7 +131,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public IActionResult Logout()
     {
-        Response.Cookies.Delete("refreshToken",CreateRefreshCookieOptions(DateTime.UtcNow.AddDays(-1)));
+        Response.Cookies.Delete("refreshToken", CreateRefreshCookieOptions(-1));
         return Ok();
     }
 

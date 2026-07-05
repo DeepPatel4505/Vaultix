@@ -40,7 +40,7 @@ public class JwtService
             issuer : _config["Jwt:Issuer"],
             audience : _config["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_config.GetValue<double>("Jwt:ExpiryMinutes")),
+            expires: DateTime.UtcNow.AddMinutes(_config.GetValue<double>("Jwt:AccessTokenExpiryInMinutes")),
             signingCredentials : creds
         );
         return new JwtSecurityTokenHandler().WriteToken(token);
@@ -58,6 +58,6 @@ public class JwtService
 
     public int GetRefreshTokenExpiry()
     {
-        return _config.GetValue<int>("Jwt:RefreshTokenExpiry");
+        return _config.GetValue<int>("Jwt:RefreshTokenExpiryInMinutes");
     }
 }
