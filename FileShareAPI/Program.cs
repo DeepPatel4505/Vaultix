@@ -64,6 +64,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 builder.Services.Configure<AuthCookieOptions>(
     builder.Configuration.GetSection(AuthCookieOptions.Position));
 
+builder.Services.Configure<ShareSettings>(
+    builder.Configuration.GetSection(ShareSettings.Position));
+
 var jwtsettings = builder.Configuration.GetSection("Jwt");
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -141,6 +144,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IShareService, ShareService>();
 
 var allowedOrigins =
     builder.Configuration
