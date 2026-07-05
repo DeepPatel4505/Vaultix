@@ -26,6 +26,11 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDetails)
     {
+        Console.WriteLine("========== LOGIN ==========");
+        Console.WriteLine($"Host: {Request.Host}");
+        Console.WriteLine($"Origin: {Request.Headers.Origin}");
+        Console.WriteLine($"Scheme: {Request.Scheme}");
+        Console.WriteLine($"IsHttps: {Request.IsHttps}");
         try
         {
             var response = await _authService.LoginUser(loginDetails.Email, loginDetails.Password);
