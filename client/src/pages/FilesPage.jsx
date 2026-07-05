@@ -2,6 +2,8 @@ import { useState, useMemo } from "react";
 import { useWorkspace } from "../context/WorkspaceContext";
 import Card from "../components/Card";
 import FilePreviewPanel from "../components/FilePreviewPanel";
+import ShareDrawer from "../components/ShareDrawer";
+import ShareBadges from "../components/ShareBadge";
 import api from "../lib/api";
 
 // Helper function to build virtual file system tree on client
@@ -147,6 +149,7 @@ const FilesPage = () => {
         moveToTrash,
         restoreFromTrash,
         deletePermanently,
+        refreshFiles,
     } = useWorkspace();
 
     // View Navigation States
@@ -156,6 +159,7 @@ const FilesPage = () => {
     const [viewLayout, setViewLayout] = useState("list"); // list, grid
     const [viewMode, setViewMode] = useState("folders"); // folders, flat (only applies to Workspace view)
     const [downloadingIds, setDownloadingIds] = useState({});
+    const [shareFile, setShareFile] = useState(null);
 
     // Download Handler
     const onDownload = async (id, fileName) => {
@@ -557,17 +561,17 @@ const FilesPage = () => {
 
                                                     {/* File type icon & Name */}
                                                     <td className="px-4 py-2 font-medium text-ink align-middle min-w-0">
-                                                        <div className="flex items-center gap-2.5 min-w-0">
-                                                            <div className={`rounded p-1 shrink-0 ${fileType.bgColor}`}>
-                                                                {fileType.icon}
-                                                            </div>
-                                                            <span className="truncate block font-semibold text-ink group-hover:text-primary transition-colors max-w-xs sm:max-w-sm md:max-w-md" title={file.fileName}>
-                                                                {file.fileName.split("/").pop()}
-                                                            </span>
-                                                            {isFileShared && activeView !== "trash" && (
-                                                                <span className="badge badge-shared">
-                                                                    SHARED
+                                                        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 min-w-0">
+                                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                                <div className={`rounded p-1 shrink-0 ${fileType.bgColor}`}>
+                                                                    {fileType.icon}
+                                                                </div>
+                                                                <span className="truncate block font-semibold text-ink group-hover:text-primary transition-colors max-w-xs sm:max-w-sm md:max-w-md" title={file.fileName}>
+                                                                    {file.fileName.split("/").pop()}
                                                                 </span>
+                                                            </div>
+                                                            {activeView !== "trash" && file.shareLink && file.shareLink.isActive && (
+                                                                <ShareBadges shareLink={file.shareLink} />
                                                             )}
                                                         </div>
                                                     </td>
@@ -647,11 +651,11 @@ const FilesPage = () => {
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            toggleShared(file.id);
+                                                                            setShareFile(file);
                                                                         }}
-                                                                        className={`p-1 rounded border border-transparent cursor-pointer ${shared.includes(file.id) ? "text-brand-accent hover:bg-brand-accent/5" : "text-muted hover:bg-surface-strong/50 hover:text-primary"
+                                                                        className={`p-1 rounded border border-transparent cursor-pointer ${file.shareLink && file.shareLink.isActive ? "text-brand-accent hover:bg-brand-accent/5" : "text-muted hover:bg-surface-strong/50 hover:text-primary"
                                                                             }`}
-                                                                        title={shared.includes(file.id) ? "Unshare file" : "Share file"}
+                                                                        title={file.shareLink && file.shareLink.isActive ? "Edit share settings" : "Share file"}
                                                                     >
                                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -728,6 +732,14 @@ const FilesPage = () => {
                     />
                 </>
             )}
+
+            {/* Share settings drawer */}
+            <ShareDrawer
+                file={shareFile}
+                isOpen={!!shareFile}
+                onClose={() => setShareFile(null)}
+                onSave={refreshFiles}
+            />
         </div>
     );
 };
