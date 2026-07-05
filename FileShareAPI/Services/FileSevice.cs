@@ -43,15 +43,26 @@ public class FileService(ApplicationDbContext db, IFileStorage fileStorage) : IF
     public async Task<List<FileListDto>> GetFileListAsync(Guid userId)
     {
         var fileList = await _db.Files
+            .Include(file => file.ShareLink)
             .Where(file => file.UserId == userId)
             .Where(file => file.StorageProvider == ActiveStorageProvider)
             .ToListAsync();
+
         return [.. fileList.Select(f => new FileListDto(
             f.Id,
             f.OriginalFileName,
             f.Size,
             f.DownloadCount,
-            f.UploadedAt
+            f.UploadedAt,
+            f.ShareLink != null && f.ShareLink.IsActive ? new ShareLinkSummaryDto(
+                f.ShareLink.Token,
+                f.ShareLink.IsPublic,
+                !string.IsNullOrEmpty(f.ShareLink.PasswordHash),
+                f.ShareLink.ExpiresAt,
+                f.ShareLink.DownloadLimit,
+                f.ShareLink.DownloadCount,
+                f.ShareLink.IsActive
+            ) : null
         ))];
     }
 

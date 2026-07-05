@@ -74,10 +74,11 @@ public class ShareController : ControllerBase
         }
     }
 
-    [HttpPost("{token}/download")]
+    [HttpPost("download/{token}")]
     [AllowAnonymous]
     public async Task<IActionResult> DownloadFile(string token, [FromBody] DownloadShareRequestDto? request)
     {
+        Console.WriteLine($"Download request for token: {token}, password provided: {request?.Password != null}");
         try
         {
             var clientIp = GetClientIp();
