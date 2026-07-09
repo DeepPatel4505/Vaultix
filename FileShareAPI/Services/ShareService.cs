@@ -103,7 +103,7 @@ public class ShareService : IShareService
                 previousLink.PasswordHash = HashPassword(request.Password);
                 previousLink.ExpiresAt = request.ExpiresAt;
                 previousLink.DownloadLimit = request.DownloadLimit;
-                
+
                 shareLink = previousLink;
                 _db.ShareLinks.Update(previousLink);
             }
@@ -377,7 +377,9 @@ public class ShareService : IShareService
             throw new FileNotFoundException("Share link not found.");
         }
 
-        // Dynamically check and update status of Active link
+        // Dynamically check and update status of an Active link
+        // (kept for cases where nothing else touches the row concurrently;
+        // the atomic claim below is the real guard against races)
         if (shareLink.Status == ShareLinkStatus.Active)
         {
             if (shareLink.ExpiresAt.HasValue && shareLink.ExpiresAt.Value < DateTime.UtcNow)
@@ -429,34 +431,83 @@ public class ShareService : IShareService
             }
         }
 
-        // Generate pre-signed URL first
+        // ---- Atomic claim of a download slot ----
+        // This single conditional UPDATE is the concurrency guard: it only
+        // succeeds for as many concurrent requests as there are remaining slots,
+        // because the DB serializes writes to the same row.
+        var now = DateTime.UtcNow;
+
+        var rowsAffected = await _db.ShareLinks
+            .Where(sl => sl.Id == shareLink.Id
+                && sl.Status == ShareLinkStatus.Active
+                && (sl.ExpiresAt == null || sl.ExpiresAt > now)
+                && (sl.DownloadLimit == null || sl.DownloadCount < sl.DownloadLimit.Value))
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(sl => sl.DownloadCount, sl => sl.DownloadCount + 1)
+                .SetProperty(sl => sl.LastAccessedAt, now));
+
+        if (rowsAffected == 0)
+        {
+            // Someone else claimed the last slot, or the link expired/was
+            // disabled concurrently. Reload fresh state to report accurately.
+            var current = await _db.ShareLinks.AsNoTracking()
+                .FirstOrDefaultAsync(sl => sl.Id == shareLink.Id);
+
+            if (current == null)
+            {
+                throw new FileNotFoundException("Share link not found.");
+            }
+            if (current.ExpiresAt.HasValue && current.ExpiresAt.Value < now)
+            {
+                throw new InvalidOperationException("This sharing link has expired.");
+            }
+            if (current.Status == ShareLinkStatus.Disabled)
+            {
+                throw new InvalidOperationException("This link is no longer available.");
+            }
+            if (current.Status == ShareLinkStatus.Deleted)
+            {
+                throw new InvalidOperationException("This link has been deleted.");
+            }
+            // Default / most common concurrent case
+            throw new InvalidOperationException("Download limit reached.");
+        }
+
+        // We successfully claimed a slot — re-fetch the authoritative count so
+        // we can decide whether *this* download tips it over the limit.
+        var updatedCount = await _db.ShareLinks
+            .Where(sl => sl.Id == shareLink.Id)
+            .Select(sl => sl.DownloadCount)
+            .FirstAsync();
+
+        if (shareLink.DownloadLimit.HasValue && updatedCount >= shareLink.DownloadLimit.Value)
+        {
+            await _db.ShareLinks
+                .Where(sl => sl.Id == shareLink.Id)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(sl => sl.Status, ShareLinkStatus.DownloadLimitReached)
+                    .SetProperty(sl => sl.IsActive, false));
+        }
+
+        // Generate pre-signed URL only after the slot is safely claimed
         var signedUrl = await _fileStorage.GetFileUrlAsync(
             shareLink.File!.StorageKey,
             TimeSpan.FromSeconds(15),
             shareLink.File.OriginalFileName
         );
 
-        // Update stats
-        shareLink.DownloadCount++;
-        shareLink.File.DownloadCount++;
-        shareLink.LastAccessedAt = DateTime.UtcNow;
-
-        // If this download hits the limit, mark it as limit reached
-        if (shareLink.DownloadLimit.HasValue && shareLink.DownloadCount >= shareLink.DownloadLimit.Value)
-        {
-            shareLink.Status = ShareLinkStatus.DownloadLimitReached;
-            shareLink.IsActive = false;
-        }
-
-        _db.ShareLinks.Update(shareLink);
-        await _db.SaveChangesAsync();
+        // Update file-level stats (not part of the concurrency-sensitive limit
+        // check, so a plain increment is fine here)
+        await _db.Files
+            .Where(f => f.Id == shareLink.File.Id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(f => f.DownloadCount, f => f.DownloadCount + 1));
 
         // Audit Logging (using Guid.Empty for anonymous downloader)
         await _auditService.LogAsync(Guid.Empty, "ShareDownload", shareLink.File!.Id, shareLink.File.OriginalFileName, clientIp);
 
         return signedUrl;
     }
-
     public async Task<bool> DisableShareLinkAsync(Guid fileId, Guid userId)
     {
         // Check ownership of file first
