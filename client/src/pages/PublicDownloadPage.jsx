@@ -67,47 +67,59 @@ export const PublicDownloadPage = () => {
         setDownloadError("");
         setIsDownloading(true);
 
+        let downloadUrl;
         try {
-            // POST to initiate download
             const response = await api.post(`/share/download/${token}`, {
                 password: metadata?.passwordRequired ? password : null,
             });
+            downloadUrl = response.data.url;
+        } catch (err) {
+            switch (err.response?.status) {
+                case 401:
+                    setDownloadError("Invalid password.");
+                    break;
+                case 403:
+                    setDownloadError(err.response.data.message);
+                    break;
+                case 404:
+                    setDownloadError("Share link not found.");
+                    break;
+                default:
+                    setDownloadError("Something went wrong.");
+            }
+            setIsDownloading(false);
+            return;
+        }
 
-            const downloadUrl = response.data.url;
-
-            // Trigger browser download using iframe or a temporary anchor click
+        // Trigger the actual download separately — any DOM/navigation
+        // weirdness here should never be reported as a failed request.
+        try {
             const link = document.createElement("a");
             link.href = downloadUrl;
             link.setAttribute("download", metadata?.fileName || "download");
             link.style.display = "none";
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
-
-            // Refetch metadata to update download counts
-            const infoResponse = await api.get(`/share/${token}`);
-            setMetadata(infoResponse.data);
-        } catch (err) {
-            console.error("Download failed:", err);
-            switch (err.response?.status) {
-                case 401:
-                    setDownloadError("Invalid password.");
-                    break;
-
-                case 403:
-                    setDownloadError(err.response.data.message);
-                    break;
-
-                case 404:
-                    setDownloadError("Share link not found.");
-                    break;
-
-                default:
-                    setDownloadError("Something went wrong.");
-            }
-        } finally {
-            setIsDownloading(false);
+            // Defer removal and guard it — on iOS the doc may already
+            // be navigating by the time this runs.
+            setTimeout(() => {
+                try {
+                    if (link.parentNode) link.parentNode.removeChild(link);
+                } catch (_) {}
+            }, 0);
+        } catch (_) {
+            // Ignore — navigation-based download on iOS can throw here
+            // even when the download itself succeeded.
         }
+
+        setTimeout(async () => {
+            try {
+                const info = await api.get(`/share/${token}`);
+                setMetadata(info.data);
+            } catch {}
+        }, 1000);
+
+        setIsDownloading(false);
     };
 
     if (isLoading) {
