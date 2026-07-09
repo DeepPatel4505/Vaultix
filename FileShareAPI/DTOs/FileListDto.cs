@@ -1,3 +1,5 @@
+using System;
+
 namespace FileShareAPI.Dtos;
 
 public record FileListDto(
@@ -5,6 +7,7 @@ public record FileListDto(
     string FileName,
     long Size,
     int DownloadCount,
-    DateTime UploadedAt
+    DateTime UploadedAt,
+    ShareLinkSummaryDto? ShareLink
 );
 

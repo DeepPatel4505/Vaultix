@@ -4,6 +4,7 @@ import UploadPage from "./pages/UploadPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import LandingPage from "./pages/LandingPage";
+import PublicDownloadPage from "./pages/PublicDownloadPage";
 import Layout from "./layout/Layout";
 import RequireAuth from "./components/RequireAuth";
 import { WorkspaceProvider } from "./context/WorkspaceContext";
@@ -25,6 +26,7 @@ function App() {
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/s/:token" element={<PublicDownloadPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

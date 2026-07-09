@@ -3,6 +3,7 @@ using System;
 using FileShareAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FileShareAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260705090545_AddShareLinks")]
+    partial class AddShareLinks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -135,9 +138,6 @@ namespace FileShareAPI.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("DisabledAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<int>("DownloadCount")
                         .HasColumnType("integer");
 
@@ -162,9 +162,6 @@ namespace FileShareAPI.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasColumnType("text");
@@ -173,7 +170,8 @@ namespace FileShareAPI.Migrations
 
                     b.HasIndex("CreatedBy");
 
-                    b.HasIndex("FileId");
+                    b.HasIndex("FileId")
+                        .IsUnique();
 
                     b.HasIndex("Token")
                         .IsUnique();
@@ -232,8 +230,8 @@ namespace FileShareAPI.Migrations
                         .IsRequired();
 
                     b.HasOne("FileShareAPI.Models.FileRecord", "File")
-                        .WithMany("ShareLinks")
-                        .HasForeignKey("FileId")
+                        .WithOne("ShareLink")
+                        .HasForeignKey("FileShareAPI.Models.ShareLink", "FileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -244,7 +242,7 @@ namespace FileShareAPI.Migrations
 
             modelBuilder.Entity("FileShareAPI.Models.FileRecord", b =>
                 {
-                    b.Navigation("ShareLinks");
+                    b.Navigation("ShareLink");
                 });
 
             modelBuilder.Entity("FileShareAPI.Models.User", b =>

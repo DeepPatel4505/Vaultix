@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useWorkspace } from "../context/WorkspaceContext";
+import ShareBadges from "./ShareBadge";
 
 const formatDate = (value) => {
     if (!value) return "Unknown";
@@ -194,10 +195,8 @@ const Card = ({ fileMeta, onDownload, onDelete, onSelect, isDownloading }) => {
                         <span className="text-[10px] text-muted-soft font-mono uppercase tracking-wider">
                             {fileTypeInfo.type}
                         </span>
-                        {isFileShared && activeView !== "trash" && (
-                            <span className="badge badge-shared">
-                                Shared
-                            </span>
+                        {activeView !== "trash" && fileMeta?.shareLink && fileMeta.shareLink.isActive && (
+                            <ShareBadges shareLink={fileMeta.shareLink} />
                         )}
                     </div>
                 </div>
