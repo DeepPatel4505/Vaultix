@@ -5,7 +5,8 @@ import api from "../lib/api";
 const formatSize = (bytes) => {
     const sizeInBytes = Number(bytes ?? 0);
     if (sizeInBytes < 1024) return `${sizeInBytes} B`;
-    if (sizeInBytes < 1024 * 1024) return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+    if (sizeInBytes < 1024 * 1024)
+        return `${(sizeInBytes / 1024).toFixed(1)} KB`;
     return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
@@ -15,11 +16,13 @@ const getExtension = (fileName) => {
 
 const getFileTypeIcon = (fileName = "") => {
     const extension = getExtension(fileName);
-    if (["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(extension)) return "🖼️";
+    if (["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(extension))
+        return "🖼️";
     if (["pdf", "doc", "docx", "txt", "md"].includes(extension)) return "📄";
     if (["zip", "rar", "tar", "gz", "7z"].includes(extension)) return "📦";
     if (["mp4", "mov", "avi", "mkv", "webm"].includes(extension)) return "🎥";
-    if (["js", "ts", "json", "html", "css", "cs", "py"].includes(extension)) return "💻";
+    if (["js", "ts", "json", "html", "css", "cs", "py"].includes(extension))
+        return "💻";
     return "📁";
 };
 
@@ -30,7 +33,7 @@ export const PublicDownloadPage = () => {
     const [metadata, setMetadata] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
-    
+
     // Download states
     const [password, setPassword] = useState("");
     const [downloadError, setDownloadError] = useState("");
@@ -45,7 +48,10 @@ export const PublicDownloadPage = () => {
                 setMetadata(response.data);
             } catch (err) {
                 console.error("Failed to load share metadata:", err);
-                setError(err.response?.data?.message || "This sharing link could not be found or has been deactivated.");
+                setError(
+                    err.response?.data?.message ||
+                        "This sharing link could not be found or has been deactivated.",
+                );
             } finally {
                 setIsLoading(false);
             }
@@ -64,7 +70,7 @@ export const PublicDownloadPage = () => {
         try {
             // POST to initiate download
             const response = await api.post(`/share/download/${token}`, {
-                password: metadata?.passwordRequired ? password : null
+                password: metadata?.passwordRequired ? password : null,
             });
 
             const downloadUrl = response.data.url;
@@ -83,10 +89,21 @@ export const PublicDownloadPage = () => {
             setMetadata(infoResponse.data);
         } catch (err) {
             console.error("Download failed:", err);
-            if (err.response && err.response.status === 403) {
-                setDownloadError("Incorrect password. Please verify and try again.");
-            } else {
-                setDownloadError(err.response?.data?.message || "Failed to download file. The link may have expired or limit reached.");
+            switch (err.response?.status) {
+                case 401:
+                    setDownloadError("Invalid password.");
+                    break;
+
+                case 403:
+                    setDownloadError(err.response.data.message);
+                    break;
+
+                case 404:
+                    setDownloadError("Share link not found.");
+                    break;
+
+                default:
+                    setDownloadError("Something went wrong.");
             }
         } finally {
             setIsDownloading(false);
@@ -101,11 +118,28 @@ export const PublicDownloadPage = () => {
                 <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-brand-accent/10 blur-[120px] pointer-events-none" />
 
                 <div className="text-center space-y-4">
-                    <svg className="animate-spin h-8 w-8 text-brand-accent mx-auto" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <svg
+                        className="animate-spin h-8 w-8 text-brand-accent mx-auto"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+                        <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                        />
+                        <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
                     </svg>
-                    <p className="text-xs text-muted-soft font-semibold tracking-wider uppercase">Retrieving secure link details...</p>
+                    <p className="text-xs text-muted-soft font-semibold tracking-wider uppercase">
+                        Retrieving secure link details...
+                    </p>
                 </div>
             </div>
         );
@@ -136,8 +170,11 @@ export const PublicDownloadPage = () => {
     }
 
     // Client-side validations
-    const isExpired = metadata?.expiresAt && new Date(metadata.expiresAt) < new Date();
-    const isLimitExceeded = metadata?.downloadLimit && metadata.downloadCount >= metadata.downloadLimit;
+    const isExpired =
+        metadata?.expiresAt && new Date(metadata.expiresAt) < new Date();
+    const isLimitExceeded =
+        metadata?.downloadLimit &&
+        metadata.downloadCount >= metadata.downloadLimit;
 
     return (
         <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-6 select-none relative overflow-hidden text-ink">
@@ -154,14 +191,16 @@ export const PublicDownloadPage = () => {
 
             {/* Glassmorphic Download Container */}
             <div className="w-full max-w-md bg-canvas/40 backdrop-blur-md border border-hairline/60 shadow-2xl rounded-2xl p-6 space-y-6">
-                
                 {/* File Header Card */}
                 <div className="flex items-center gap-4 bg-surface-soft/20 p-4 rounded-xl border border-hairline/40">
                     <div className="text-3xl shrink-0">
                         {getFileTypeIcon(metadata?.fileName)}
                     </div>
                     <div className="min-w-0 flex-1">
-                        <h2 className="text-xs font-bold text-ink truncate" title={metadata?.fileName}>
+                        <h2
+                            className="text-xs font-bold text-ink truncate"
+                            title={metadata?.fileName}
+                        >
                             {metadata?.fileName}
                         </h2>
                         <p className="text-[10px] text-muted-soft font-mono mt-0.5">
@@ -190,7 +229,9 @@ export const PublicDownloadPage = () => {
                                     type="password"
                                     required
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    onChange={(e) =>
+                                        setPassword(e.target.value)
+                                    }
                                     placeholder="Enter file password to download"
                                     className="w-full bg-canvas text-xs px-3 py-2.5 rounded border border-hairline focus:border-brand-accent focus:outline-none transition-colors"
                                 />
@@ -210,9 +251,24 @@ export const PublicDownloadPage = () => {
                         >
                             {isDownloading ? (
                                 <>
-                                    <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                    <svg
+                                        className="animate-spin h-3.5 w-3.5 text-white"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        />
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        />
                                     </svg>
                                     <span>Decrypting & downloading...</span>
                                 </>
@@ -229,12 +285,16 @@ export const PublicDownloadPage = () => {
                 <div className="pt-4 border-t border-hairline/40 grid grid-cols-2 gap-3 text-[10px] text-muted-soft font-medium select-none">
                     <div>
                         <span>Downloads Count</span>
-                        <strong className="block text-ink text-xs mt-0.5">{metadata?.downloadCount ?? 0} times</strong>
+                        <strong className="block text-ink text-xs mt-0.5">
+                            {metadata?.downloadCount ?? 0} times
+                        </strong>
                     </div>
                     {metadata?.downloadLimit && (
                         <div>
                             <span>Max Limit</span>
-                            <strong className="block text-ink text-xs mt-0.5">{metadata.downloadLimit} times</strong>
+                            <strong className="block text-ink text-xs mt-0.5">
+                                {metadata.downloadLimit} times
+                            </strong>
                         </div>
                     )}
                 </div>

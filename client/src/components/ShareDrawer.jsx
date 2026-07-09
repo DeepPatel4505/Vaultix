@@ -223,7 +223,7 @@ export const ShareDrawer = ({ file, isOpen, onClose, onSave }) => {
                     setSuccess("Share settings saved successfully!");
                 }
             } else {
-                await api.delete(`/share?fileId=${file.id}`);
+                await api.delete(`/share/${file.id}`);
                 setShareLink(null);
                 setSuccess("File unshared successfully.");
             }
