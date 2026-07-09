@@ -102,6 +102,7 @@ public class ShareController : ControllerBase
         }
     }
 
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [HttpGet("{token}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetShareInfo(string token)
@@ -155,20 +156,20 @@ public class ShareController : ControllerBase
     }
 
     [HttpDelete("{fileId}")]
-    [HttpDelete]
     [Authorize]
-    public async Task<IActionResult> DisableShare([FromRoute] Guid? fileId, [FromQuery] Guid? queryFileId)
+    public async Task<IActionResult> DisableShare(Guid fileId)
     {
         try
         {
-            var targetFileId = fileId ?? queryFileId;
-            if (targetFileId == null || targetFileId == Guid.Empty)
+            Console.WriteLine($"Disable share request for fileId: {fileId}");
+            var targetFileId = fileId;
+            if (targetFileId == Guid.Empty)
             {
                 return BadRequest(new { message = "FileId is required." });
             }
 
             var userId = GetCurrentUserId();
-            var result = await _shareService.DisableShareLinkAsync(targetFileId.Value, userId);
+            var result = await _shareService.DisableShareLinkAsync(targetFileId, userId);
             if (!result)
             {
                 return NotFound(new { message = "Share link not found for this file." });
