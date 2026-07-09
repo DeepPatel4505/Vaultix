@@ -29,12 +29,15 @@ The workspace is designed to feel like a personal digital studio—calm, intuiti
 
 ## Features
 
-- 📁 **File-First Dashboard** — View and organize your recent, favorite, and shared files. Access your directories instantly from a workspace-focused interface.
+- 📁 **File-First Dashboard** — View and organize your recent, favorite, and shared files. Access virtual folders and directories dynamically from a workspace-focused interface.
 - 📤 **Drag-and-Drop Uploads** — Effortlessly upload multiple files with progress tracking and real-time visual feedback.
 - 👁️ **Rich File Previews** — View files, documents, and images natively within the application workspace.
-- 🔒 **Granular Visibility Control** — Set specific accessibility options for your files, including *Public*, *Private*, *Shared*, and *Expired* states.
-- 🔗 **Smart Link Sharing** — Generate and customize sharing links with precise expiration controls.
-- 🎨 **Premium Aesthetic & Micro-animations** — Enjoy a highly responsive and polished interface featuring smooth transitions powered by Framer Motion.
+- 🔗 **Secure File Sharing UI & Workflows** — Share files securely with advanced controls:
+  - ⚙️ **Share Drawer** — Toggle public sharing, require access passwords, configure link expiration presets (1 hour, 1 day, 7 days, 30 days) or custom date-times, and set custom download limit thresholds.
+  - 🎨 **Live Badge System** — Displays immediate visual status indicators (`🟢 Shared`, `🔒 Password`, `⏳ Expiry time`, `↓ Download limit remaining`) next to shared files in the files grid and list views.
+  - 📱 **QR Code Sharing** — Generates real-time custom QR code SVGs within the drawer, allowing users to preview and download them as PNG image files.
+  - 📥 **Public Download Page** — A custom landing page for external users to input passwords, check status limits, and execute secure downloads using temporary pre-signed urls.
+- 🎨 **Premium Aesthetic & Micro-animations** — Enjoy a highly responsive, glassmorphic layout featuring smooth transitions powered by Framer Motion.
 
 ---
 

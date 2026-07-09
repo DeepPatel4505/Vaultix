@@ -36,8 +36,11 @@ The platform consists of:
 - 📂 **Client-Side Folder System** — Organize assets hierarchically by formatting paths with slashes. Group files dynamically into virtual folders.
 - 📤 **Drag-and-Drop Uploads** — Easily upload files with progress indicators and instant visual feedback.
 - 👁️ **Slide-Over Previews** — View images, PDF documents, and plain-text files natively inside a sliding panel without leaving the workspace.
-- 🔒 **Granular Visibility Control** — Toggle file permissions between *Public*, *Private*, *Shared*, and *Expired* states.
-- 🔗 **Smart Link Sharing** — Generate direct download links and customize shareable routes with built-in clipboard copying.
+- 🔗 **Secure File Sharing** — Share files publicly or privately with granular visibility, customizable settings, and live visual badges:
+  - 🔑 **Password Protection** — Require secure access codes hashed using ASP.NET Identity's PasswordHasher.
+  - ⏳ **Expiry Limits** — Automatically expire links after preset durations (e.g. 1 hour, 1 day, 7 days) or custom dates/times.
+  - 🛑 **Download Constraints** — Cap download limits and track remaining accesses. Built-in concurrency control prevents race conditions.
+  - 📱 **QR Code Sharing** — Generate and download custom QR codes as PNGs for immediate scanning.
 - 🛡️ **JWT Authentication** — Secure user signup, login, and authorization to protect user assets.
 - 📦 **Dual Storage Engines** — Automatically stores files on the local filesystem or easily routes them to Cloudflare R2 / AWS S3 storage buckets.
 
@@ -51,15 +54,23 @@ Vaultix uses a thin-controller API architecture. Business logic resides in dedic
 ```text
 Vaultix/
 ├── FileShareAPI/       # ASP.NET Core 10 Web API backend
-│   ├── Controllers/    # Thin HTTP endpoints (Auth, File operations)
-│   ├── Services/       # Business logic (JWT, Local/S3 storage engines, auth)
+│   ├── Controllers/    # Thin HTTP endpoints (Auth, File operations, Share settings)
+│   │   └── ShareController.cs
+│   ├── Services/       # Business logic (JWT, Local/S3 storage engines, ShareService, AuditService)
+│   │   ├── ShareService.cs
+│   │   └── AuditService.cs
 │   ├── Data/           # EF Core ApplicationDbContext and entity mappings
-│   ├── Models/         # Database models (FileRecord, User)
+│   ├── Models/         # Database models (FileRecord, User, ShareLink, AuditLog)
+│   │   ├── ShareLink.cs
+│   │   └── AuditLog.cs
 │   └── Migrations/     # Auto-generated database migrations
 └── client/             # React 19 + Vite frontend
     ├── src/
-    │   ├── components/ # Reusable UI controls (Card, Upload, Previews)
-    │   ├── pages/      # View layouts (LandingPage, FilesPage, AuthPages)
+    │   ├── components/ # Reusable UI controls (Card, Previews, ShareDrawer, ShareBadge)
+    │   │   ├── ShareDrawer.jsx
+    │   │   └── ShareBadge.jsx
+    │   ├── pages/      # View layouts (LandingPage, FilesPage, PublicDownloadPage)
+    │   │   └── PublicDownloadPage.jsx
     │   └── lib/        # API clients & configuration (Axios instances)
     └── public/         # Static assets and icons
 ```
@@ -76,6 +87,7 @@ classDiagram
     +int DownloadCount
     +string StorageKey
     +string StorageProvider
+    +ICollection~ShareLink~ ShareLinks
   }
   
   class User {
@@ -85,7 +97,26 @@ classDiagram
     +string PasswordHash
   }
 
+  class ShareLink {
+    +Guid Id
+    +Guid FileId
+    +string Token
+    +bool IsPublic
+    +string PasswordHash
+    +DateTime? ExpiresAt
+    +int? DownloadLimit
+    +int DownloadCount
+    +bool IsActive
+    +ShareLinkStatus Status
+    +Guid CreatedBy
+    +DateTime CreatedAt
+    +DateTime? LastAccessedAt
+    +FileRecord File
+  }
+
   FileRecord --> "0..1" User : Owner
+  ShareLink --> "1" FileRecord : File
+  FileRecord "1" *-- "0..*" ShareLink : ShareLinks
   
   class IFileService {
     <<interface>>
@@ -100,9 +131,16 @@ classDiagram
     +DownloadAsync(Key)
     +DeleteAsync(Key)
   }
-  
-  IFileService ..> FileRecord
-  IFileStorage ..> FileRecord
+
+  class IShareService {
+    <<interface>>
+    +CreateShareLinkAsync(Dto, Guid)
+    +RegenerateShareLinkAsync(Guid, Guid)
+    +UpdateShareSettingsAsync(Dto, Guid)
+    +GetShareLinkInfoAsync(string)
+    +ProcessDownloadAsync(string, string, string)
+    +DisableShareLinkAsync(Guid, Guid)
+  }
 ```
 
 ---
@@ -185,7 +223,12 @@ Access the Scalar documentation panel to test HTTP operations at:
 | **POST** | `/api/file` | Upload a single file (multipart form data) | JWT Bearer |
 | **GET** | `/api/file/{id}` | Retrieve file details & metadata | JWT Bearer |
 | **DELETE** | `/api/file/{id}` | Delete file record and binary storage | JWT Bearer |
-| **GET** | `/download/{id}` | Public download link endpoint | Anonymous |
+| **POST** | `/api/share` or `/api/share/create` | Create or enable public sharing configurations for a file | JWT Bearer |
+| **POST** | `/api/share/regenerate` | Deactivate active sessions and regenerate a new secure share link | JWT Bearer |
+| **PATCH** | `/api/share/settings` | Update existing share parameters (password, expiry, download limits) | JWT Bearer |
+| **GET** | `/api/share/{token}` | Retrieve secure shared file metadata & parameters | Anonymous |
+| **POST** | `/api/share/download/{token}` | Validate password (if required) and generate transient pre-signed download URL | Anonymous |
+| **DELETE** | `/api/share/{fileId}` | Disable sharing, invalidating active links and deleting public access | JWT Bearer |
 
 ---
 
