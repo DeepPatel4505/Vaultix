@@ -374,7 +374,7 @@ const Layout = () => {
                     />
 
                     {/* Drawer container */}
-                    <div className="relative w-64 max-w-xs flex-1 flex flex-col bg-canvas shadow-xl animate-slide-in-right">
+                    <div className="relative w-64 max-w-xs flex-1 flex flex-col bg-canvas shadow-xl animate-slide-in-left">
                         {sidebarContent}
                         
                         {/* Drawer Close Control */}
